@@ -1,0 +1,32 @@
+networks:
+    randimi-network:
+
+services:
+    randimi-db:
+        image: postgres:16-alpine
+        container_name: randimi-db
+        restart: "no"
+        networks:
+            - randimi-network
+        environment:
+            - POSTGRES_DB=randimi_db
+            - POSTGRES_USER=randimi_user
+            - POSTGRES_PASSWORD=postgres
+
+    randimi-app:
+        image: ghcr.io/imi-ms/randimi:${VERSION:-dev}
+        build:
+            context: ..
+            dockerfile: Dockerfile
+        container_name: randimi-app
+        restart: "no"
+        ports:
+            - "8080:8080"
+        networks:
+            - randimi-network
+        environment:
+            SPRING_DATASOURCE_PASSWORD: postgres
+            SPRING_DATASOURCE_URL: jdbc:postgresql://randimi-db:5432/randimi_db
+            SPRING.DATASOURCE.USERNAME: randimi_user
+        depends_on:
+            - randimi-db

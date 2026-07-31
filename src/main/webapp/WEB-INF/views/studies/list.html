@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * @author Daniel Preciado-Marquez
+     */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + (${path} == '/studies/archived' ? #{studies.archiveStudy.head} : #{studies.studies}),
+														   links=~{::head/th:block},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<title th:unless="${path} == '/studies/archived'" th:text="'Randimi - ' + #{studies.studies}">Randimi - Studies</title>
+	<title th:if="${path} == '/studies/archived'" th:text="'Randimi - ' + #{studies.archiveStudy.title}">Randimi - Studies</title>
+	<th:block>
+		<link rel="stylesheet" type="text/css" charset="utf8" href=""
+			  th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+		<script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+	</th:block>
+</head>
+<body>
+<header>
+	<h1 id="studyListHeader" th:text="${path} == '/studies/archived' ?  #{studies.archiveStudy.head} : #{studies.studies}" class="selenium-language-test">Archive</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header selenium-language-test" th:text="#{sidebar.actions}"></div>
+
+		<!--/* Button to add a new study */-->
+		<th:block sec:authorize="hasAnyRole('ROLE_ADMIN', T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_LOCAL_MANAGER, 'ROLE_STUDY_MANAGER')">
+			<div th:replace="~{fragments/sidebar.html :: sidebarAction(action=@{/studies/create}, icon='fa-plus', id='addStudyButton', label=#{studies.addStudy})}"></div>
+		</th:block>
+
+		<!--/* Back-button to the main page */-->
+		<div th:replace="~{fragments/sidebar.html :: backButton(action=@{/})}"></div>
+	</div>
+
+	<div class="randimi-sidebar-section selenium-language-test">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.archive}"></div>
+
+		<div th:replace="~{fragments/sidebar.html :: sidebarAction(action=@{/studies}, appendClasses=${path} != '/studies/archived' ? 'randimi-sidebar-button-selected' : '', icon='fa-list', id='studyOverviewButton', label=#{sidebar.studyOverview})}"></div>
+		<div th:replace="~{fragments/sidebar.html :: sidebarAction(action=@{/studies/archived}, appendClasses=${path} == '/studies/archived' ? 'randimi-sidebar-button-selected' : '', icon='fa-archive', id='archiveSidebarButton', label=#{sidebar.archive})}"></div>
+	</div>
+</div>
+
+<!-- Content of the study -->
+<div id="contentDiv" class="randimi-content-box">
+	<div th:if="${path} == '/studies/archived'">
+		<div th:replace="~{fragments/study_table.html :: studyTable(studies=${archivedStudies}, tableId='archivedStudiesTable')}">
+		</div>
+	</div>
+	<div th:unless="${path} == '/studies/archived'">
+		<div th:replace="~{fragments/study_table.html :: studyTable(studies=${allStudies}, tableId='studiesTable')}">
+		</div>
+	</div>
+
+	<!--/* Archive Popup */-->
+	<form th:method="POST" th:action="@{/studies/archive}" th:object="${archiveStudyDTO}" >
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='archivePopup', popupTitleMessageCode='studies.archiveStudy.title', bodyContent=~{::#archiveStudyPopupBody}, footerContent=~{::#archiveStudyPopupFooter})}">
+			<div id="archiveStudyPopupBody">
+				<div id="retentionPeriodWarning" class="mb-3" style="display:none;">
+					<div th:replace="~{fragments/messages.html :: common_msg_normal(msg=#{studies.archiveStudy.retentionPeriodInNearFuture})}"></div>
+				</div>
+
+				<div th:replace="~{fragments/inputs.html :: dateInput(fieldName='retentionPeriod', label=#{studies.archiveStudy.retentionPeriod}, onChange='checkRetentionPeriod()')}"></div>
+				<div class="mt-1">
+					<button type="button" onclick="addRetentionPeriodYears(10)" class="btn btn-primary"
+					        th:text="#{studies.archiveStudy.set10Years}">
+					</button>
+					<button type="button" onclick="addRetentionPeriodYears(30)" class="btn btn-primary"
+					        th:text="#{studies.archiveStudy.set30Years}">
+					</button>
+				</div>
+
+
+				<input id="archiveStudyId" th:field="*{studyId}" type="hidden" class="form-control" />
+			</div>
+			<div id="archiveStudyPopupFooter">
+				<button type="button" class="btn" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel</button>
+				<button type="submit" class="btn btn-primary" value="save" id="archiveButton" name="action" th:text="#{button.archive}">Archive</button>
+			</div>
+		</div>
+	</form>
+
+	<!--/* Delete Popup */-->
+	<form method="POST" th:action="@{/studies/remove}" th:object="${deleteStudyDTO}">
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='confirmPopup', popupTitleMessageCode='studies.deleteStudy.title', bodyContent=~{::#deleteStudyPopupBody}, footerContent=~{::#deleteStudyPopupFooter})}">
+			<div id="deleteStudyPopupBody">
+				<div class="mb-3">
+					<span id="popup-text"></span>
+				</div>
+
+				<div class="mb-3">
+					<div th:replace="~{fragments/change_reason.html :: changeReason(changeReasonKey='deleteStudyDTO.changeReason', reasonTypesKey='reasonTypes')}">
+					</div>
+				</div>
+
+				<input th:field="*{studyId}" type="hidden" class="form-control" />
+
+				<div th:replace="~{fragments/inputs.html :: textInput(enableAuto=false, fieldName='studyNameConfirm', hasBinding=false, label=#{studies.deleteStudy.confirmQuestion})}"></div>
+			</div>
+			<div id="deleteStudyPopupFooter">
+				<button type="button" class="btn" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel</button>
+				<button type="submit" class="btn btn-primary" value="save" id="saveButton" name="action" th:text="#{button.delete}">Delete</button>
+			</div>
+		</div>
+	</form>
+</div>
+<script type="text/javascript" th:inline="javascript">
+	let currentStudyToDelete = null;
+
+	$(document).ready(function() {
+        const isArchivePage = /*[[${path == '/studies/archived'}]]*/ false;
+        if (isArchivePage) {
+            // date columns are treated as strings, because DataTables can't sort our date format without plugins
+            const opts2 = {
+                "columnDefs": [
+                    {
+                        "targets": [0, 1],
+                        "type": "string",
+                    },
+                    {
+                        "orderData": [4],
+                        "targets": [3]
+                    },
+                    {
+                        "targets": [4,6],
+                        "visible": false,
+                        "searchable": false,
+                    },
+                    {
+                        "orderData": [6],
+                        "targets": [5]
+                    },
+                    {
+                        "targets": 7,
+                        "orderable": false,
+                        "searchable": false,
+                    }
+                ]
+            };
+            randimi.setUpDatatable('archivedStudiesTable', opts2);
+        } else {
+            const opts = {
+                "columnDefs": [
+                    {
+                        "targets": [2],
+	                    "width": "170px"
+                    },
+                    {
+                        "orderData": [4],
+                        "targets": [3]
+                    },
+                    {
+                        "targets": 4,
+                        "visible": false,
+                        "searchable": false,
+                    },
+                    {
+                        "targets": 5,
+                        "orderable": false,
+                        "searchable": false,
+                    }
+                ]
+            };
+
+            randimi.setUpDatatable('studiesTable', opts);
+        }
+
+        document.getElementById("studyNameConfirm").addEventListener("input", function(event) {
+            if (event.target.value === currentStudyToDelete) {
+                document.getElementById('saveButton').disabled = false;
+            } else {
+                document.getElementById('saveButton').disabled = true;
+            }
+        });
+	});
+
+    function updateArchivePopUp(studyId) {
+        document.getElementById('archiveStudyId').value = studyId;
+
+        const retentionPeriodColumn = document.getElementById('retentionPeriod' + studyId);
+        if (retentionPeriodColumn) {
+            const textValue = retentionPeriodColumn.textContent;
+            const dmy = textValue.split(".");
+            document.getElementById("retentionPeriod").value = dmy[2] + "-" + dmy[1] + "-" + dmy[0];
+        } else {
+            addRetentionPeriodYears(10);
+        }
+    }
+
+	function updatePopUp(studyId, studyName) {
+		const deleteDialogueText = /*[[#{studies.deleteStudy.popupText}]]*/ 'Do you really want to delete the study <b>STUDY_NAME_PLACEHOLDER?</b> Please give a reason.';
+
+		document.getElementById('popup-text').innerHTML = deleteDialogueText.replace("STUDY_NAME_PLACEHOLDER", studyName);
+		document.getElementById('studyId').value = studyId;
+
+        currentStudyToDelete = studyName;
+        document.getElementById('saveButton').disabled = true;
+        document.getElementById("studyNameConfirm").value = "";
+	}
+
+    /**
+     * Sets the value of the retention period input to today plus the given number of years.
+     * @param years Number of years to add to today's date.
+     */
+    function addRetentionPeriodYears(years) {
+        const futureDate = new Date();
+        futureDate.setUTCHours(0, 0, 0, 0);
+        futureDate.setFullYear(futureDate.getFullYear() + years);
+        document.getElementById("retentionPeriod").value = futureDate.toISOString().split('T')[0];
+
+        checkRetentionPeriod();
+    }
+
+    /**
+     * Checks if the retention period is in the future or within one year and displays a warning if so.
+     */
+    function checkRetentionPeriod() {
+        const threshold = new Date();
+        threshold.setUTCHours(0, 0, 0, 0);
+
+        const value = document.getElementById("retentionPeriod").value;
+        const retentionPeriod = new Date(value);
+
+        // Check if retention period is in the future
+        if (retentionPeriod <= threshold) {
+            document.getElementById("archiveButton").disabled = true;
+            return;
+        } else {
+            document.getElementById("archiveButton").disabled = false;
+        }
+
+        threshold.setFullYear(threshold.getFullYear() + 1);
+
+        // Check if retention period is in the near future
+        if (retentionPeriod < threshold) {
+            document.getElementById("retentionPeriodWarning").style.display = '';
+        } else {
+            document.getElementById("retentionPeriodWarning").style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>

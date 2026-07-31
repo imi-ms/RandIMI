@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{users.edit.editUser},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:if="${user.getId() == 0}" class="selenium-language-test" th:text="'Randimi - ' + #{users.invite.header.create}">Randimi - Create Invitation</title>
+    <title th:unless="${user.getId() == 0}" class="selenium-language-test" th:text="'Randimi - ' + #{users.invite.header.edit}">Randimi - Edit Invitation</title>
+</head>
+
+<body>
+<header>
+    <h1 th:if="${user.getId() == 0}" id="headline" class="selenium-language-test"
+        th:text="#{users.invite.header.create}">Create Invitation</h1>
+    <h1 th:unless="${user.getId() == 0}" id="headline" class="selenium-language-test"
+        th:text="#{users.invite.header.edit(${user.getUsername()})}">Edit Invitation</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Save Button */-->
+        <button th:replace="~{fragments/sidebar.html :: saveButton(formName='inviteForm')}"></button>
+
+        <!--/* Cancel Button */-->
+        <button th:replace="~{fragments/sidebar.html :: cancelButton(formName='inviteForm')}"></button>
+    </div>
+</div>
+
+<div id="contentDiv"  sec:authorize="hasAnyRole('ROLE_ADMIN', T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_LOCAL_MANAGER, 'ROLE_USER_MANAGER')">
+    <form id="inviteForm" method="POST" th:action="invite" th:object="${user}">
+        <div class="mb-3 userForm">
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.invite.legend}, content=~{::#editUserDiv}, fieldsetId='editUserFieldset')}">
+                <div id="editUserDiv">
+                    <input id="id" type="hidden" class="form-control" th:field="*{id}"/>
+
+                    <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='skipEMailValidation', label=#{users.edit.skipEMailValidation}, onChange='toggleSkipEMailValidation()')}"></div>
+
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='firstName', label=#{users.edit.firstName}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='lastName', label=#{users.edit.lastName}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='eMail', label=#{users.monitor.mail}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='username', label=#{users.edit.username}, maxLength=255)}"></div>
+
+    				<div id=passwordDiv>
+                        <div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='password', label=#{users.edit.password})}"></div>
+                        <div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='repeatPassword', label=#{users.edit.repeatPassword})}"></div>
+    				</div>
+                    <div id="apiAccess" sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_API_USER)">
+                        <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=#{users.roles.API_USER}, label=#{'enum.UserRoles.' + ${apiRole}}, inputTitle=#{users.invite.apiAccess}, value=${apiRole})}"></div>
+                    </div>
+                    <div id="userRoles">
+                    	<label for="userRoles" class="selenium-language-test" th:text="#{users.edit.userRoles}">User Roles</label>
+
+                        <th:block th:each="userRole : ${userRoles}">
+                            <th:block sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN)">
+                                <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=${#messages.msg('users.roles.' + userRole)}, isGroup=${true}, label=#{'enum.UserRoles.' + ${userRole}}, value=${userRole})}"></div>
+                            </th:block>
+                            <th:block sec:authorize="!hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN) and hasAnyRole(#vars.userRole)">
+                                <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=${#messages.msg('users.roles.' + userRole)}, isGroup=${true}, label=#{'enum.UserRoles.' + ${userRole}}, value=${userRole})}"></div>
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </form>
+</div>
+<script type="text/javascript" th:inline="javascript">
+    $(document).ready(function () {
+        toggleSkipEMailValidation();
+
+        const isExistingUser = /*[[${user.getId() != 0}]]*/ false;
+        if (isExistingUser) {
+            const hasErrors = /*[[${error != null and error != ''}]]*/ false;
+            randimi.preventUnloadAfterChange('inviteForm', ['saveButton', 'cancelButton'], hasErrors);
+        }
+    });
+
+    function toggleSkipEMailValidation() {
+        const checkBox = document.getElementById('skipEMailValidation')
+
+        const passwordDiv = document.getElementById('passwordDiv');
+        const usernameLabel = document.getElementById('usernameLabel');
+
+        if (checkBox.checked) {
+            passwordDiv.style.display = 'block';
+            usernameLabel.innerText = /*[[#{users.edit.username}]]*/ '';
+    	} else {
+            passwordDiv.style.display = 'none';
+            usernameLabel.innerText = /*[[#{users.edit.usernameSuggestion}]]*/ '';
+    	}
+    }
+</script>
+</body>
+</html>

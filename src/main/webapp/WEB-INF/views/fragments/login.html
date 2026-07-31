@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/**
+	 * Thymeleaf fragment containing the login dialog of RandIMI. 
+	 *
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Login Fragment</title>
+</head>
+
+<body>
+	<div th:fragment="login_dialog" class="login-welcome pt-5">
+		<!--/* Logo of RandIMI */-->
+		<img id="logoLoginPage" th:src="@{/resources/images/randimi_logo.png}" class="small-content mx-auto px-2 randimi-logo"/>
+
+		<form name='loginForm' th:action="@{/j_spring_security_check}" method='POST' class="mt-5">
+			<div id="login-inputs" class="mx-auto small-content px-2">
+				<div th:replace="~{fragments/inputs.html :: textInput(enableAuto='off', fieldName='user', placeholder=#{welcome.username}, hasBinding=false)}"></div>
+				<div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='pass', placeholder=#{welcome.password}, hasBinding=false)}"></div>
+				<input id="submit" index="3" type="submit" name="submit" class="btn btn-primary selenium-language-test" th:value="#{welcome.login}" style="width: 100%;">
+				<a id="passForgotten" th:href="@{users/password}"><span class="selenium-language-test" th:text="#{welcome.forgotPassword}">Forgot Password?</span></a>
+			</div>
+			<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+		</form>
+	</div>
+</body>
+</html>

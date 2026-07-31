@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='RandIMI - ' + #{subjects.add.headline},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'RandIMI - ' + #{subjects.add.headline}">RandIMI - Add Subjects</title>
+</head>
+<body>
+<header>
+    <h1 th:text="#{subjects.add.headline}">Add Subjects</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Save Button */-->
+        <button th:replace="~{fragments/sidebar.html :: saveButton(formName='subjectForm', disabled=${study.sites.isEmpty()})}"></button>
+
+        <!--/* Cancel Button */-->
+        <button th:replace="~{fragments/sidebar.html :: cancelButton(formName='subjectForm')}"></button>
+    </div>
+</div>
+
+<div id="contentDiv">
+    <form id="subjectForm" method="POST" th:action="@{/subjects/add(subjectListId=${param.get('subjectListId')})}" th:object="${subject}">
+        <div class="mb-3 participantForm">
+            <!--/* Hidden fields */-->
+            <fieldset hidden>
+                <input id="studyId" name="studyId" type="hidden" class="form-control" th:value="${study.id}" />
+                <input id="studyApiId" name="studyApiId" type="hidden" class="form-control" th:value="${study.apiId}" />
+            </fieldset>
+
+            <!--/* General fields */-->
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{subjects.add.general}, content=~{::#generalFieldset})}">
+                <div id="generalFieldset">
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='pseudonym', label=#{subjects.add.pseudonym}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: selectInput(disabled=${study.stratifyBySite} and ${strataLocked}, fieldName='siteId', label=#{subjects.add.site}, options=${study.sites})}"></div>
+                </div>
+            </fieldset>
+
+            <!--/* Enumerated and interval strata */-->
+            <th:block th:unless="${#lists.isEmpty(study.getEnumeratedStratums()) && #lists.isEmpty(study.getIntervalStratums())}">
+                <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{subjects.add.parameters}, content=~{::#parameterFieldset})}">
+                    <div id="parameterFieldset">
+                        <div th:each="stratum,loop : ${study.getEnumeratedStratums()}" class="mb-3">
+                            <div th:replace="~{fragments/inputs.html :: selectInput(disabled=${strataLocked}, fieldName='enumeratedStratums[__${loop.index}__]', label=${stratum.guiName}, options=${stratum.getStratumParts()})}"></div>
+                        </div>
+                        <div th:each="stratum,loop : ${study.getIntervalStratums()}" class="mb-3">
+                            <label th:for="'intervalStratums' + ${loop.index}" class="required" th:text="${stratum.guiName}"></label>
+                            <input th:id="'intervalStratums' + ${loop.index}" type="number" class="form-control" th:field="*{intervalStratums[__${loop.index}__]}" />
+                            <span class="error" th:if="${#fields.hasErrors('intervalStratums[__${loop.index}__]')}" th:errors="*{intervalStratums[__${loop.index}__]}">Interval Stratum Error</span>
+                        </div>
+                    </div>
+                </fieldset>
+            </th:block>
+        </div>
+    </form>
+</div>
+</body>
+</html>

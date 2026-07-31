@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/** 
+	 * Thymeleaf fragment containing all displayed messages of RandIMI. 
+	 *
+	 * @param error (model,optional) String containing error messages.
+	 * @param success (model,optional) String containing success messages.
+	 * @param msg (model,optional) String containing msg messages.
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+     */-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8">
+		<title>Message Banner Fragments</title>
+		<link rel="stylesheet" href="../../resources/css/randimi.css" type="text/css"/>
+	</head>
+	<body>
+		<!--/**
+			 * Fragment for error messages.
+			 * @param error (model) Displayed message
+			 */-->
+		<div th:fragment="common_msg_error(error)" id="errorDiv" th:if="${error != null and error != ''}" class="message-box error-message">
+			<span th:text="${error}">Error</span>
+		</div>
+		<!--/**
+			 * Fragment for success messages.
+			 * @param success (model) Displayed message
+			 */-->
+		<div th:fragment="common_msg_success(success)" id="successDiv" th:if="${success != null and success != ''}" class="message-box success-message">
+			<span th:text="${success}">Success</span>
+		</div>
+		<!--/**
+			 * Fragment for info messages.
+			 * @param info (model) Displayed message
+			 */-->
+		<div th:fragment="common_msg_info(info)" id="infoDiv" th:if="${info != null and info != ''}" class="message-box info-message">
+			<span th:text="${info}">Info</span>
+		</div>
+		<!--/**
+			 * Fragment for normal messages.
+			 * @param msg (model) Displayed message
+			 */-->
+		<div th:fragment="common_msg_normal(msg)" th:if="${msg != null and msg != ''}" class="message-box warn-message">
+			<span th:text="${msg}">Message</span>
+		</div>
+		<!--/**
+			 * Fragment for unsaved changes message.
+			 */-->
+		<div th:fragment="common_msg_unsaved_changes" id="unsavedChangesDiv" class="message-box warn-message" style="display: none;">
+			<span th:text="#{study.editUsers.unsavedChanges}">Message</span>
+		</div>
+	</body>
+</html>

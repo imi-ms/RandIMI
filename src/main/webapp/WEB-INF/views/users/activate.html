@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='RandIMI - ' + #{users.activate.title},
+                                                           header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+                                                           content=~{::#contentDiv},
+                                                           script=~{})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'RandIMI - ' + #{users.activate.title}">RandIMI - Activate Account</title>
+</head>
+<body>
+<header>
+    <h1 id="headline" class="selenium-language-test" th:text="#{users.activate.title}">Activate Account</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Activate Button */-->
+        <button type="submit" form="activationForm" class="btn btn-primary randimi-sidebar-button selenium-language-test"
+                value="save" id="saveButton" name="action" th:text="#{users.activate.button.activate}">Activate Account
+        </button>
+
+        <!--/* Cancel Button */-->
+        <button type="submit" form="activationForm" class="btn btn-primary randimi-sidebar-button selenium-language-test"
+                value="cancel" id="cancelButton" name="action" th:text="#{button.cancel}">Cancel
+        </button>
+    </div>
+</div>
+
+<div id="contentDiv" th:if="${user != null and user != ''}">
+    <form id="activationForm" method="POST" th:action="activate" th:object="${user}">
+        <div class="mb-3 userForm">
+            <fieldset hidden>
+                <input type="hidden" class="form-control" th:field="*{id}"/>
+            </fieldset>
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.edit.userDetails}, content=~{::#activationDiv})}">
+                <div id="activationDiv">
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='firstName', label=#{users.edit.firstName}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='lastName', label=#{users.edit.lastName}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='eMail', label=#{users.monitor.mail}, maxLength=255)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: textInput(fieldName='username', label=#{users.activate.username}, maxLength=255)}"></div>
+
+                    <div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='password', label=#{users.edit.password})}"></div>
+                    <div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='repeatPassword', label=#{users.edit.repeatPassword})}"></div>
+                </div>
+            </fieldset>
+        </div>
+    </form>
+</div>
+</body>
+</html>

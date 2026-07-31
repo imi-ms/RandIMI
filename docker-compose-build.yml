@@ -1,0 +1,6 @@
+services:
+    randimi-app:
+        image: ghcr.io/imi-ms/randimi:${VERSION:-dev}
+        build:
+            context: ./
+            dockerfile: ./Dockerfile

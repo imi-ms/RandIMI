@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Change Reason Fragment</title>
+</head>
+<body>
+<!--/*@thymesVar id="changeReasonKey" type="java.lang.String"*/-->
+<!--/*@thymesVar id="reasonTypesKey" type="java.lang.String>"*/-->
+<div th:fragment="changeReasonFieldset(changeReasonKey, reasonTypesKey)">
+	<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.edit.changes}, content=~{::#changesFieldsetDiv})}">
+		<div th:replace="~{:: changeReason(reasonTypesKey=${reasonTypesKey}, changeReasonKey=${changeReasonKey})}" id="changesFieldsetDiv">
+		</div>
+	</fieldset>
+</div>
+
+<!--/*@thymesVar id="changeReasonKey" type="java.lang.String"*/-->
+<!--/*@thymesVar id="reasonTypesKey" type="java.lang.String>"*/-->
+<!--/*@thymesVar id="popupTitleMessageCode" type="java.lang.String>"*/-->
+<div th:fragment="changeReasonPopup(changeReasonKey, reasonTypesKey, popupTitleMessageCode)">
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId='savePopup', popupTitleMessageCode=${popupTitleMessageCode}, bodyContent=~{::#savePopupBody}, footerContent=~{::#savePopupFooter})}">
+		<div id="savePopupBody">
+			<fieldset th:replace="~{fragments/change_reason.html :: changeReason(changeReasonKey='changeReason', reasonTypesKey='reasonTypes')}">
+			</fieldset>
+		</div>
+		<div id="savePopupFooter">
+			<button type="button" id="closeSavePopupButton" class="btn btn-primary" data-bs-dismiss="modal"
+			        aria-hidden="true" th:text="#{button.cancel}">
+				Cancel
+			</button>
+			<button type="submit" class="btn btn-primary selenium-language-test" onclick="this.focus();" tabindex="1"
+			        value="save" id="confirmButton" name="action" th:text="#{button.save}">Save
+			</button>
+		</div>
+	</div>
+</div>
+
+<!--/*@thymesVar id="changeReasonKey" type="java.lang.String"*/-->
+<!--/*@thymesVar id="reasonTypesKey" type="java.lang.String>"*/-->
+<div th:fragment="changeReason(changeReasonKey, reasonTypesKey)" id="changesDiv">
+	<input type="hidden" th:field="${__${changeReasonKey}__.oldDto}" />
+
+	<label for="changeReason.auditReasonType" class="required" th:text="#{study.changeReason.title}"></label>
+	<select id="changeReason.auditReasonType" class="form-control changeReasonSelect" onchange="randimi.updateChangeReason(this)">
+		<option value="" th:text="#{study.changeReason.select}" disabled="disabled">Please select</option>
+		<option th:each="reasonType : ${__${reasonTypesKey}__}" th:value="${reasonType}" th:text="#{'enum.AuditReasonType.' + ${reasonType}}"></option>
+	</select>
+
+	<label for="changeReason" class="required changeReasonLabel" style="display: none;"
+		   th:text="#{study.changeReason.custom}">Custom text</label>
+	<input id="changeReason" class="form-control changeReason" th:field="${__${changeReasonKey}__.changeReason}"
+		   maxlength="255" style="display: none"/>
+	<span class="error" th:if="${#fields.hasErrors('${__${changeReasonKey}__.changeReason}')}"
+	      th:errors="${__${changeReasonKey}__.changeReason}">Change Reason Error</span>
+</div>
+</body>
+</html>

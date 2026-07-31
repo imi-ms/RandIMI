@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/**
+	 * Thymeleaf fragment containing the common footer of RandIMI. 
+	 *
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="../../resources/css/randimi.css" type="text/css">
+	</head>
+	<body>
+		<footer th:fragment="common_footer" id="footer" class="full-ht bg-primary row" style="margin-left: 0px;">
+			<!--/* Copyright */-->
+			<span id="footer_copyright" th:text="'&copy; ' + #{footer.copyright(${#dates.format(#dates.createNow(), 'yyyy')})}" class="my-auto ms-5 col-sm text-start">
+				&copy; University Münster, Medical Fakulty Münster
+			</span>
+			<!--/* Version */-->
+			<span id="footer_version" th:text="#{footer.version} + ' ' + ${appVersion}" class="my-auto col-sm text-center">Version: unknown</span>
+			<!--/* Imprint, Data privacy, Support  */-->
+			<span class="my-auto me-5 col-sm text-end">
+				<a data-bs-target="#imprintPopup" data-bs-toggle="modal" href="" class="full-ht" th:text="#{footer.imprint}">Imprint</a>
+				| 
+				<a data-bs-target="#privacyPopup" data-bs-toggle="modal" href="" class="full-ht" th:text="#{footer.privacy}">Data Protection</a> |
+				<a data-bs-target="#supportPopup" data-bs-toggle="modal" href="" class="full-ht" th:text="#{footer.support}">Support</a>
+			</span>
+
+			<!--/* Popups of the footer options  */-->
+			<div th:replace="~{fragments/popup :: common_popup(popupId='imprintPopup', popupTitleMessageCode='footer.imprint', bodyContent=~{::#imprintPopup})}">
+				<div id="imprintPopup">
+					<th:block th:each="footerMessageSettings, iterFMS : ${footerMessageSettings}">
+						<div th:if="${#strings.equals(footerMessageSettings.currentLanguage.tag, locale)}"
+							th:utext="${footerMessageSettings.imprintContent}">
+						</div>
+					</th:block>
+				</div>
+			</div>
+			<div th:replace="~{fragments/popup :: common_popup(popupId='privacyPopup', popupTitleMessageCode='footer.privacy', bodyContent=~{::#privacyPopup})}">
+				<div id="privacyPopup">
+					<th:block th:each="footerMessageSettings, iterFMS : ${footerMessageSettings}">
+						<div th:if="${#strings.equals(footerMessageSettings.currentLanguage.tag, locale)}"
+							th:utext="${footerMessageSettings.dataPrivacyContent}"></div>
+					</th:block>
+				</div>
+			</div>
+			<div th:replace="~{fragments/popup :: common_popup(popupId='supportPopup', popupTitleMessageCode='footer.support', bodyContent=~{::#supportPopup})}">
+				<div id="supportPopup">
+					<th:block th:each="footerMessageSettings, iterFMS : ${footerMessageSettings}">
+						<div th:if="${#strings.equals(footerMessageSettings.currentLanguage.tag, locale)}"
+							th:utext="${footerMessageSettings.supportContent}"></div>
+					</th:block>
+				</div>
+			</div>
+		</footer>
+	</body>
+</html>

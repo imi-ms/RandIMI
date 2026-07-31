@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8"/>
+	<title>Sidebar Fragments</title>
+</head>
+<body>
+
+<button th:fragment="sidebarButton(icon, id, label)"
+        th:with="appendClasses=${appendClasses} ?: '', disabled = ${disabled} ?: false, formName = ${formName} ?: '', name = ${name} ?: '', value = ${value} ?: ''"
+        th:id="${id}" type="submit" class="btn btn-primary randimi-sidebar-button" th:form="${formName}" th:classappend="${appendClasses}"
+        th:name="${name}" th:value="${value}" th:disabled="${disabled}">
+	<span class="fas randimi-sidebar-button-icon" th:classappend="${icon}"></span>
+	<span class="randimi-sidebar-button-label selenium-language-test" th:text="${label}"></span>
+</button>
+
+<form th:fragment="sidebarAction(action, icon, id, label)"
+      th:with="appendClasses=${appendClasses} ?: '', disabled = ${disabled} ?: false, name = ${name} ?: '', value = ${value} ?: '' " method="GET"
+      th:action="${action}">
+	<button th:replace="~{:: sidebarButton(appendClasses=${appendClasses}, icon=${icon}, id=${id}, label=${label}, disabled=${disabled}, name=${name}, value=${value})}"></button>
+</form>
+
+<form th:fragment="backButton(action)"
+      th:replace="~{:: sidebarAction(action=${action}, icon='fa-arrow-left', id='returnButton', label=#{button.back})}">
+</form>
+
+<form th:fragment="cancelButton(formName)"
+      th:replace="~{:: sidebarButton(icon='fa-times', id='cancelButton', label=#{button.cancel}, formName=${formName}, name='action', value='cancel')}">
+</form>
+
+<button th:fragment="saveButton(formName)" th:with="disabled = ${disabled} ?: false"
+        th:replace="~{:: sidebarButton(disabled=${disabled}, icon='fa-save', id='saveButton', label=#{button.save}, formName=${formName}, name='action', value='save')}">
+</button>
+
+<!--/*@thymesVar id="study" type="de.unimuenster.imi.randimi.dto.study.StudyDTO"*/-->
+<div th:fragment="navigation(study)" th:with="selected=${selected} ?: ''" class="randimi-sidebar-section">
+
+	<div class="randimi-sidebar-section-header">Navigation</div>
+
+	<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)"
+	          th:unless="${study.isInexistent()}">
+		<button th:replace="~{:: sidebarAction(action=@{/studies/view}, appendClasses=${selected == 'view' ? 'randimi-sidebar-button-selected' : ''}, icon='fa-eye', id='redirectView', label=#{studies.view}, name='id', value=${study.apiId})}"></button>
+	</th:block>
+	<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_REPORT)"
+	          th:if="${study.isStatisticsAvailable()}">
+		<button th:replace="~{:: sidebarAction(action=@{/studies/statistics}, appendClasses=${selected == 'statistics' ? 'randimi-sidebar-button-selected' : ''}, icon='fa-chart-line', id='redirectStatistics', label=#{studies.statistics}, name='id', value=${study.apiId})}"></button>
+	</th:block>
+	<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)"
+			th:unless="${study.isInexistent() || study.isArchived() || study.isDeleted()}">
+		<button th:replace="~{:: sidebarAction(action=@{/studies/edit}, appendClasses=${selected == 'edit' ? 'randimi-sidebar-button-selected' : ''}, icon='fa-pencil-alt', id='redirectEdit', label=#{studies.editStudy}, name='id', value=${study.apiId})}"></button>
+	</th:block>
+	<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY_USERS)"
+	          th:unless="${study.isInexistent() || study.isDeleted()}">
+		<button th:replace="~{:: sidebarAction(action=@{/studies/editUsers}, appendClasses=${selected == 'users' ? 'randimi-sidebar-button-selected' : ''}, icon='fa-user-tag', id='redirectEditUsers', label=#{studies.editUsers}, name='id', value=${study.apiId})}"></button>
+	</th:block>
+	<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)"
+	          th:unless="${study.isInexistent() || study.isCreated() || study.isDeleted()}">
+		<button th:replace="~{:: sidebarAction(action=@{/studies/{studyId}/subject-lists(studyId = ${study.apiId})}, appendClasses=${selected == 'subjects' ? 'randimi-sidebar-button-selected' : ''}, icon=${study.isLocked() || study.isArchived()} ? 'fa-user' : 'fa-user-plus', id='redirectSubjectLists', label=${study.isLocked() || study.isArchived()} ? #{subjects.view} : #{subjects.viewAdd})}"></button>
+	</th:block>
+</div>
+
+</body>
+</html>

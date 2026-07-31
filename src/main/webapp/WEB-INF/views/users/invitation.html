@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title=#{users.invitation.title},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title class="selenium-language-test" th:text="#{users.invitation.title}"></title>
+</head>
+
+<body>
+<header>
+    <h1 id="headline" class="selenium-language-test" th:text="#{users.invitation.header(${username})}"></h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Renew invitation Button */-->
+        <button th:replace="~{fragments/sidebar.html :: sidebarButton(icon='fa-redo-alt', id='renewButton', label=#{users.invitation.renewInvitation}, formName='invitationForm', name='action', value='renew')}"></button>
+
+        <!--/* Back Button */-->
+        <button th:replace="~{fragments/sidebar.html :: sidebarButton(icon='fa-arrow-left', id='cancelButton', label=#{button.back}, formName='invitationForm', name='action', value='cancel')}"></button>
+    </div>
+</div>
+
+<div id="contentDiv" sec:authorize="@customPermissionEvaluator.hasPermissionUser(#authentication, #vars.userId)">
+    <form id="invitationForm" method="POST" th:action="invitation">
+        <div class="mb-3 userForm">
+            <fieldset hidden>
+                <input id="userId" name="userId" type="hidden" class="form-control" th:value="${userId}"/>
+            </fieldset>
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.invitation.legend}, content=~{::#invitationStatusDiv})}">
+                <div id="invitationStatusDiv">
+                    <table class="table table-bordered randimi-vertical-table">
+                        <tr>
+                            <th th:text="#{users.invitation.status}">Name</th>
+                            <td th:if="${isInvitationExpired}" th:text="#{users.invitation.status.expired}"></td>
+                            <td th:if="not ${isInvitationExpired}" th:text="#{users.invitation.status.valid}"></td>
+                        </tr>
+                        <tr>
+                            <th th:text="#{users.invitation.time}"></th>
+                            <td th:text="${#temporals.format(invitationTimestamp, '__#{datetimeSeconds.format}__')}"></td>
+                        </tr>
+                        <tr>
+                            <th th:text="#{users.invitation.validUntil}"></th>
+                            <td th:text="${#temporals.format(invitationExpirationTimestamp, '__#{datetimeSeconds.format}__')}"></td>
+                        </tr>
+                        <tr>
+                            <th th:text="#{users.invitation.invitationLink}"></th>
+                            <td th:if="${invitationTimestamp != null}" th:text="${invitationLink}"></td>
+                        </tr>
+                    </table>
+                </div>
+            </fieldset>
+        </div>
+    </form>
+</div>
+</body>
+</html>

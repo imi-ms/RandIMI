@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: common_head(title='Randimi - ' + #{accessDenied.header},links=~{})}">
+    <title th:text="'Randimi - ' + #{accessDenied.header}">Randimi - Access Denied!</title>
+</head>
+<body style="text-align:center">
+    <h1 th:text="#{accessDenied.header}">Access Denied!</h1>
+    <h2 th:text="#{accessDenied.text}">You do not have the permission to access this page.</h2>
+</body>
+</html>

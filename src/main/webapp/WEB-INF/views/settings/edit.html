@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * Page used to edit all server settings.
+     *
+     * @author Tobias Hardt
+	 * @author Paul Schaub
+	 * @author Tobias Brix
+	 */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='RandIMI - ' + #{settings.edit.header},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'RandIMI - ' + #{settings.edit.header}">RandIMI - Settings</title>
+</head>
+<body>
+<header>
+	<h1 id="headline" class="selenium-language-test" th:text="#{settings.edit.header}">Settings</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+		<!--/* Save Button */-->
+		<button th:replace="~{fragments/sidebar.html :: saveButton(formName='settingsForm')}"></button>
+
+		<!--/* Cancel Button */-->
+		<button th:replace="~{fragments/sidebar.html :: cancelButton(formName='settingsForm')}"></button>
+	</div>
+</div>
+
+<div id="contentDiv">
+	<div id="pseudonymRegexTemplateTemplate" style="display: none;">
+		<div th:replace="~{:: prt(-1, false, true, ${pseudonymRegexTemplate})}"></div>
+	</div>
+    <form id="settingsForm" method="POST" th:action="@{/settings/edit}" th:object="${settings}">
+		<div class="mb-3 settingsForm">
+			<fieldset hidden>
+				<input id="id" type="hidden" class="form-control" th:field="*{id}" th:value="${settings.id}"/>
+			</fieldset>
+			<!--/* ------------------------------ */-->
+			<!--/* Default language and hidden ID */-->
+			<!--/* ------------------------------ */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.language}, content=~{::#languageFieldset})}">
+				<div id="languageFieldset">
+					<div th:replace="~{fragments/inputs.html :: selectInput(fieldName='defaultLanguage', label=#{settings.edit.language.defaultLanguage}, options=${supportedLanguages})}"></div>
+				</div>
+			</fieldset>
+
+			<!--/* ------------------------------ */-->
+			<!--/* Support settings               */-->
+			<!--/* ------------------------------ */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.support}, content=~{::#supportFieldset})}">
+				<div id="supportFieldset">
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='supportMail', label=#{settings.edit.support.supportMail}, maxLength=255)}"></div>
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='supportPhone', label=#{settings.edit.support.supportPhone}, maxLength=255)}"></div>
+				</div>
+			</fieldset>
+
+			<!--/* ------------------------------ */-->
+			<!--/* E-Mail settings                */-->
+			<!--/* ------------------------------ */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.eMail}, content=~{::#mailFieldset})}">
+				<div id="mailFieldset">
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='mailHost', label=#{settings.edit.eMail.mailHost}, maxLength=255)}"></div>
+					<div th:replace="~{fragments/inputs.html :: numberInput(fieldName='mailPort', label=#{settings.edit.eMail.mailPort})}"></div>
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='mailTLS', label=#{settings.edit.eMail.mailTLS})}"></div>
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='mailSMTPAuth', label=#{settings.edit.eMail.mailSMTP}, onChange='toggleMailSettings()')}"></div>
+
+					<div id="smtpAuthDiv">
+						<div th:replace="~{fragments/inputs.html :: textInput(fieldName='mailUsername', label=#{settings.edit.eMail.mailUsername}, maxLength=255)}"></div>
+						<div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='mailPassword', label=#{settings.edit.eMail.mailPassword}, setValue=true)}"></div>
+					</div>
+
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='mailSender', label=#{settings.edit.eMail.mailSender}, maxLength=255)}"></div>
+
+					<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.testMail}, content=~{::#testMailFieldset})}">
+						<div id="testMailFieldset">
+							<div class="input-group">
+								<button type="button" class="btn btn-primary selenium-language-test"
+								        th:text="#{settings.edit.testMail.send}" onclick="sendEMail()">Send E-Mail
+								</button>
+								<span class="input-group-text selenium-language-test"
+								      th:text="#{settings.edit.testMail.receiver}">Receiver</span>
+								<input id="receiverEMailAddress" type="email" class="form-control randimi-ignore-changes"
+									   th:value="${#authentication.getPrincipal().getUser().getEMail()}"/>
+							</div>
+							<div class="input-group">
+								<span class="input-group-text selenium-language-test"
+								      th:text="#{settings.edit.testMail.status}">Status</span>
+								<input id="sendMailStatus" class="form-control w-25 border" disabled="disabled"/>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</fieldset>
+
+			<!--/* ------------------------------ */-->
+			<!--/* Customization settings         */-->
+			<!--/* ------------------------------ */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.customization}, content=~{::#customizeFieldset})}">
+				<div id="customizeFieldset">
+					<div th:replace="~{fragments/inputs.html :: colorInput(fieldName='mainColor', label=#{settings.edit.customization.mainColor})}"></div>
+					<div th:replace="~{fragments/inputs.html :: colorInput(fieldName='highlightColor', label=#{settings.edit.customization.highlightColor})}"></div>
+					<div th:replace="~{fragments/inputs.html :: colorInput(fieldName='backgroundColor', label=#{settings.edit.customization.backgroundColor})}"></div>
+					<div th:replace="~{fragments/inputs.html :: colorInput(fieldName='mainTextColor', label=#{settings.edit.customization.mainTextColor})}"></div>
+					<div th:replace="~{fragments/inputs.html :: colorInput(fieldName='highlightTextColor', label=#{settings.edit.customization.highlightTextColor})}"></div>
+
+					<input type="button" id="resetColors" th:value="#{settings.edit.customization.resetColors}" value="Reset Colors" class="btn btn-primary mt-2 selenium-language-test" onclick="resetRandIMIColorsToDefault()">
+				</div>
+			</fieldset>
+
+			<!--/* ------------------------------ */-->
+			<!--/* Gravatar settings              */-->
+			<!--/* ------------------------------ */-->
+			<!--/* TODO uncomment to enable gravatar */-->
+
+<!--			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.gravatar}, content=~{::#gravatarFieldset})}">-->
+<!--				<div id="gravatarFieldset">-->
+<!--					&lt;!&ndash;/* Use Gravatar? */&ndash;&gt;-->
+<!--					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='gravatarEnabled', label=#{settings.edit.gravatar.enable})}"></div>-->
+<!--					&lt;!&ndash;/* Default Options */&ndash;&gt;-->
+<!--					<div th:replace="~{fragments/inputs.html :: radioInput(	fieldName='gravatarOption', -->
+<!--																			label=#{settings.edit.gravatar.option}, -->
+<!--																			options=${supportedGravatarOptions},-->
+<!--																			labels=${supportedGravatarLabels},-->
+<!--																			imageUrls=${supportedGravatarImages}-->
+<!--																			)}"></div>-->
+<!--				</div>-->
+<!--				<span th:text=${supportedGravatarOptions}></span> -->
+<!--			</fieldset>-->
+
+			<!--/* -------------------------------------------------------------- */-->
+			<!--/* Popup Content Settings                                         */-->
+			<!--/* Starts off with creating a tab for each language               */-->
+			<!--/* Then a text area for each footer popup is created to be edited */-->
+			<!--/* -------------------------------------------------------------- */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.footer}, content=~{::#footerFieldset})}">
+				<div id="footerFieldset">
+					<label for="footerMessageSettingsList" class="required" th:text="#{settings.edit.footer.popup}">Popup Content</label>
+					<ul class="nav nav-tabs mb-2">
+						<li class="nav-item" th:each="enumLang, iterLang : ${T(de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage).values()}">
+							<a class="nav-link" th:classappend="${iterLang.first} ? 'active'" th:href="@{'#'+ ${enumLang.nativeDisplayName}}" data-bs-toggle="tab">
+								<label th:text="${enumLang.nativeDisplayName}">Language</label>
+							</a>
+						</li>
+					</ul>
+
+					<div class="tab-content">
+						<div class="tab-pane fade" th:classappend="${iterLang.first} ? 'show active'" th:each="enumLang, iterLang : ${T(de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage).values()}" th:id="${enumLang.nativeDisplayName}">
+							<div th:each="footerMessageSettings, iterFMS : ${settings.footerMessageSettingsList}" th:if="${footerMessageSettings.currentLanguage eq #root.enumLang}">
+								<input type="hidden" class="form-control text-box" th:field="*{footerMessageSettingsList[__${iterFMS.index}__].id}"/>
+								<input type="hidden" class="form-control text-box" th:field="*{footerMessageSettingsList[__${iterFMS.index}__].currentLanguage}"/>
+
+								<div th:replace="~{fragments/inputs.html :: textArea(fieldName='footerMessageSettingsList[__${iterFMS.index}__].imprintContent', isRequired=true, label=#{settings.edit.footer.imprint}, rows=2)}"></div>
+								<div th:replace="~{fragments/inputs.html :: textArea(fieldName='footerMessageSettingsList[__${iterFMS.index}__].dataPrivacyContent', isRequired=true, label=#{settings.edit.footer.privacy}, rows=2)}"></div>
+								<div th:replace="~{fragments/inputs.html :: textArea(fieldName='footerMessageSettingsList[__${iterFMS.index}__].supportContent', isRequired=true, label=#{settings.edit.footer.support}, rows=2)}"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+
+			<!--/* ------------------------------ */-->
+			<!--/* Pseudonym Templates            */-->
+			<!--/* ------------------------------ */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{settings.edit.pseudonymTemplates}, content=~{::#pseudonymTemplatesFieldset})}">
+				<div id="pseudonymTemplatesFieldset">
+					<div style="margin-bottom: var(--randimi-content-padding)">
+						<input type="button" th:value="#{settings.edit.pseudonymTemplates.addTemplate}" value="Add Template"
+						       id="addPseudonymRegexButton" class="btn btn-primary selenium-language-test"
+						       onclick="addPseudonymRegex()">
+						<input type="button" th:value="#{settings.edit.pseudonymTemplates.showAll}" value="Show all"
+						       class="btn btn-primary"
+						       onclick="showAllPseudonymTemplates()">
+						<input type="button" th:value="#{settings.edit.pseudonymTemplates.hideAll}" value="Hide all"
+						       class="btn btn-primary"
+						       onclick="hideAllPseudonymTemplates()">
+					</div>
+
+					<th:block th:each="pseudonymRegex,loop : ${settings.pseudonymRegexList}">
+						<div th:replace="~{:: prt(index=${loop.index}, isFirst=${loop.first}, isLast=${loop.last}, pseudonymRegex=${pseudonymRegex})}">
+						</div>
+					</th:block>
+				</div>
+			</fieldset>
+		</div>
+	</form>
+</div>
+
+<!--/*@thymesVar id="index" type="java.lang.Integer"*/-->
+<!--/*@thymesVar id="isFirst" type="java.lang.Integer"*/-->
+<!--/*@thymesVar id="isLast" type="java.lang.Integer"*/-->
+<!--/*@thymesVar id="pseudonymRegex" type="de.unimuenster.imi.randimi.dto.settings.PseudonymRegexDTO"*/-->
+<div th:fragment="prt(index, isFirst, isLast, pseudonymRegex)" class="pseudonymRegexTemplate row align-items-center w-100">
+	<!--/* Move up and move down buttons */-->
+	<div class="col-md-auto">
+		<div class="mt-3">
+			<button th:id="'moveUpButton-' + ${index}" type="button"
+			        th:onclick="|movePseudonymRegexUp(${index})|" data-set-index="id,onclick"
+			        class="moveUpButton btn btn-primary randimi-set-index" th:disabled="${isFirst}">
+				<span class="fas fa-arrow-circle-up fa-lg"></span>
+			</button>
+		</div>
+		<div class="mt-2">
+			<button th:id="'moveDownButton-' + ${index}" type="button"
+			        th:onclick="|movePseudonymRegexDown(${index})|" data-set-index="id,onclick"
+			        class="moveDownButton btn btn-primary randimi-set-index" th:disabled="${isLast}">
+				<span class="fas fa-arrow-circle-down fa-lg"></span>
+			</button>
+		</div>
+	</div>
+
+	<!--/* Fieldset */-->
+	<th:block th:each="pseudonymRegexDescription, iterPRD : ${pseudonymRegex.pseudonymRegexDescriptionDTOList}"
+	     th:if="${#strings.equals(pseudonymRegexDescription.currentLanguage.tag, #locale.toString())}"
+	     th:with="templateName=${pseudonymRegex.pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].name}">
+		<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=${pseudonymRegex.orderNumber + 1} + '. ' + ${templateName}, content=~{:: .pseudonymRegexTemplateFieldsetContent}, fieldsetClass='pseudonymRegexTemplateFieldset col randimi-set-index', fieldsetId=${'innerTemplateFieldset-' + __${index}__})}">
+			<div class="pseudonymRegexTemplateFieldsetContent">
+				<div th:replace="~{:: prtInner(index=${index}, pseudonymRegex=${pseudonymRegex})}">
+				</div>
+			</div>
+		</fieldset>
+	</th:block>
+</div>
+
+<!--/*@thymesVar id="index" type="java.lang.Integer"*/-->
+<!--/*@thymesVar id="pseudonymRegex" type="de.unimuenster.imi.randimi.dto.settings.PseudonymRegexDTO"*/-->
+<div th:fragment="prtInner(index, pseudonymRegex)">
+	<!--/* Hidden id and order number */-->
+	<input th:id="'pseudonymRegexList' + ${index} + '.id'" type="hidden" class="form-control randimi-swap-value randimi-set-index"
+	       th:name="'pseudonymRegexList[' + ${index} + '].id'" th:value="${pseudonymRegex.id}"
+	       value="1"/>
+	<span class="error" th:if="${index != -1} and ${#fields.hasErrors('pseudonymRegexList[__${index}__].id')}"
+	      th:errors="*{pseudonymRegexList[__${index}__].id}">ID Error</span>
+
+	<input th:id="'pseudonymRegexList' + ${index} + '.orderNumber'" type="hidden"
+	       class="form-control pseudonymRegexTemplateOrderNumber randimi-set-index"
+	       th:name="'pseudonymRegexList[' + ${index} + '].orderNumber'" th:value="${pseudonymRegex.orderNumber}"/>
+	<span class="error"
+	      th:if="${index != -1} and ${#fields.hasErrors('pseudonymRegexList[__${index}__].orderNumber')}"
+	      th:errors="*{pseudonymRegexList[__${index}__].orderNumber}">Order number Error</span>
+
+	<!--/* Language selection for name and description */-->
+	<ul class="nav nav-tabs mb-2">
+		<li class="nav-item"
+		    th:each="enumLang, iterLang : ${T(de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage).values()}">
+			<a th:id="'pseudonymRegex' + ${index} + '-' + ${iterLang.index} + 'Button'"
+			   class="nav-link randimi-set-index" th:classappend="${iterLang.first} ? 'active'"
+			   th:href="@{'#pseudonymRegex' + ${index} + '-' + ${enumLang.nativeDisplayName}}"
+			   data-bs-toggle="tab" data-set-index="href,id">
+				<label th:text="${enumLang.nativeDisplayName}">Language</label>
+			</a>
+		</li>
+	</ul>
+
+	<!--/* Name and description for each language */-->
+	<div class="tab-content">
+		<div class="tab-pane fade randimi-set-index" th:classappend="${iterLang.first} ? 'show active'"
+		     th:each="enumLang, iterLang : ${T(de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage).values()}"
+		     th:id="'pseudonymRegex' + ${index} + '-' + ${enumLang.nativeDisplayName}">
+
+			<th:block th:each="pseudonymRegexDescription, iterPRD : ${pseudonymRegex.pseudonymRegexDescriptionDTOList}"
+			          th:if="${pseudonymRegexDescription.currentLanguage eq #root.enumLang}">
+				<input type="hidden" class="form-control text-box randimi-swap-value randimi-set-index"
+				       th:id="'pseudonymRegexList' + ${index} + '.pseudonymRegexDescriptionDTOList' + ${iterPRD.index} + '.id'"
+				       th:name="'pseudonymRegexList[' + ${index} + '].pseudonymRegexDescriptionDTOList[' + ${iterPRD.index} + '].id'"
+				       th:value="${pseudonymRegex.pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].id}"/>
+				<input type="hidden" class="form-control text-box randimi-set-index"
+				       th:id="'pseudonymRegexList' + ${index} + '.pseudonymRegexDescriptionDTOList' + ${iterPRD.index} + '.currentLanguage'"
+				       th:name="'pseudonymRegexList[' + ${index} + '].pseudonymRegexDescriptionDTOList[' + ${iterPRD.index} + '].currentLanguage'"
+				       th:value="${pseudonymRegex.pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].currentLanguage}"/>
+
+				<!--/* Name */-->
+				<div id="templateNameDiv" class="input-group mb-3">
+					<span id="templateNameLabel" class="input-group-text required selenium-language-test"
+					      th:text="#{settings.edit.pseudonymTemplates.templateName}">Name</span>
+					<input class="form-control randimi-swap-value randimi-set-index"
+					       th:id="'pseudonymRegexList' + ${index} + '.pseudonymRegexDescriptionDTOList' + ${iterPRD.index} + '.name'"
+					       th:name="'pseudonymRegexList[' + ${index} + '].pseudonymRegexDescriptionDTOList[' + ${iterPRD.index} + '].name'"
+					       th:value="${pseudonymRegex.pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].name}"
+					       maxlength="255"/>
+					<span class="error"
+					      th:if="${index != -1} and ${#fields.hasErrors('pseudonymRegexList[__${index}__].pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].name')}"
+					      th:errors="*{pseudonymRegexList[__${index}__].pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].name}">Pseudonym Regex Item Name Error</span>
+				</div>
+
+				<!--/* Description */-->
+				<div id="templateDescriptionDiv" class="input-group mb-3"
+				     th:if="${pseudonymRegexDescription.currentLanguage eq #root.enumLang}">
+					<span id="templateDescriptionLabel"
+					      class="input-group-text required selenium-language-test"
+					      th:text="#{settings.edit.pseudonymTemplates.templateDescription}">Description</span>
+					<textarea class="form-control randimi-swap-value randimi-set-index"
+					          th:id="'pseudonymRegexList' + ${index} + '.pseudonymRegexDescriptionDTOList' + ${iterPRD.index} + '.description'"
+					          th:name="'pseudonymRegexList[' + ${index} + '].pseudonymRegexDescriptionDTOList[' + ${iterPRD.index} + '].description'"
+					          th:text="${pseudonymRegex.pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].description}"></textarea>
+					<span class="error"
+					      th:if="${index != -1} and ${#fields.hasErrors('pseudonymRegexList[__${index}__].pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].description')}"
+					      th:errors="*{pseudonymRegexList[__${index}__].pseudonymRegexDescriptionDTOList[__${iterPRD.index}__].description}">Pseudonym Regex Item Description Error</span>
+				</div>
+			</th:block>
+		</div>
+	</div>
+
+	<!--/* Regex expression */-->
+	<div id="templateRegexDiv" class="input-group mb-3">
+		<span id="templateRegexLabel" class="input-group-text required selenium-language-test"
+		      th:text="#{settings.edit.pseudonymTemplates.templateRegex}">Regular Expression</span>
+		<input th:id="'pseudonymRegexList' + ${index} + '.regex'" class="form-control randimi-swap-value randimi-set-index"
+		       th:name="'pseudonymRegexList[' + ${index} + '].regex'" th:value="${pseudonymRegex.regex}"
+		       maxlength="255"/>
+		<span class="input-group-text"
+		      th:text="#{settings.edit.pseudonymTemplates.testInput}">Test Input</span>
+		<div class="form-control rounded-0 randimi-regex-control" style="margin-right: 2px;">
+			<div style="display: flex;" class="form-control border-0 randimi-overlapping rounded-0">
+				<span class="randimi-regex-highlight randimi-regex-highlight-decline randimi-decline-1"></span>
+				<span class="randimi-regex-highlight randimi-regex-highlight-accept randimi-accept"></span>
+				<span class="randimi-regex-highlight randimi-regex-highlight-decline randimi-decline-2"></span>
+			</div>
+			<input th:id="'pseudonymRegexList' + ${index} + '.regexTestInput'" type="text"
+			       class="form-control border-0 rounded-0 randimi-overlapping randimi-regex-text randimi-ignore-changes randimi-swap-value randimi-set-index"/>
+		</div>
+		<button class="btn btn-primary removePseudonymRegex selenium-language-test"
+		        type="button" onclick="removePseudonymRegex(this)"
+		        th:text="#{settings.edit.pseudonymTemplates.removeTemplate}">Remove Template
+		</button>
+		<span class="error"
+		      th:if="${index != -1} and ${#fields.hasErrors('pseudonymRegexList[__${index}__].regex')}"
+		      th:errors="*{pseudonymRegexList[__${index}__].regex}">Pseudonym Regex Item Regex Error</span>
+	</div>
+</div>
+
+<script type="text/javascript" th:inline="javascript">
+    $(document).ready(function () {
+        const hasErrors = /*[[${error != null and error != ''}]]*/ false;
+        randimi.preventUnloadAfterChange('settingsForm', ['saveButton', 'cancelButton'], hasErrors);
+
+        let index;
+        let testInput;
+        /*[# th:each="regex, iterRegex : ${settings.pseudonymRegexList}"]*/
+	    index = /*[[${iterRegex.index}]]*/ 0;
+        testInput = $('#pseudonymRegexList' + index + '\\.regexTestInput');
+        randimi.addHighlightRegexTest(testInput);
+        /*[/]*/
+
+        // Hide/ show SMTP credentials
+	    toggleMailSettings();
+
+        // Add listeners to toggle buttons
+        const prtFieldsets = document.getElementsByClassName('pseudonymRegexTemplateFieldset');
+        for (const fieldset of prtFieldsets) {
+            fieldset.getElementsByClassName('fa-eye')[0].addEventListener('click', () => {
+                $(fieldset).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideUp('slow');
+	        });
+            fieldset.getElementsByClassName('fa-eye-slash')[0].addEventListener('click', () => {
+                $(fieldset).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideDown('slow');
+            });
+        }
+    });
+
+    function addPseudonymRegex() {
+        const prtTemplate = document.getElementById('pseudonymRegexTemplateTemplate').firstElementChild;
+        const pseudonymTemplatesForms = document.getElementById('pseudonymTemplatesFieldset');
+
+        let index = 0;
+        if (pseudonymTemplatesForms.lastElementChild.tagName === 'DIV') {
+            const lastForm = pseudonymTemplatesForms.lastElementChild.lastElementChild;
+            index = parseInt(lastForm.id.match(/[0-9]+(?!.*[0-9])/)[0], 10) + 1
+        }
+
+        const newForm = prtTemplate.cloneNode(true);
+
+        const nodesToIncrease = newForm.querySelectorAll('.randimi-set-index');
+        for (const node of nodesToIncrease) {
+            let attributes = ['id', 'name'];
+            if (node.dataset['setIndex']) {
+                attributes = node.dataset['setIndex'].split(',');
+            }
+            for (const attribute of attributes) {
+                if (node[attribute]) {
+                    node.setAttribute(attribute, node.getAttribute(attribute).replace('-1', index));
+                }
+            }
+        }
+
+        // Set index of legend
+	    const legendText = newForm.lastElementChild.firstElementChild.firstElementChild;
+        legendText.innerHTML = legendText.innerHTML.replace('1', index + 1);
+
+        // Set order number
+        newForm.getElementsByClassName('pseudonymRegexTemplateOrderNumber')[0].value = index;
+
+        // Add to document
+        pseudonymTemplatesForms.appendChild(newForm);
+
+        // Add listeners to collapse buttons
+        const addedForm = document.getElementById('innerTemplateFieldset-' + index);
+        addedForm.getElementsByClassName('fa-eye')[0].addEventListener('click', () => {
+            $(addedForm).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideUp('slow');
+        });
+        addedForm.getElementsByClassName('fa-eye-slash')[0].addEventListener('click', () => {
+            $(addedForm).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideDown('slow');
+        });
+
+        // Enable move down button
+	    if (index !== 0) {
+            document.getElementById('moveDownButton-' + (index - 1)).disabled = false;
+	    }
+
+        randimi.addHighlightRegexTest($('#pseudonymRegexList' + index + '\\.regexTestInput'));
+
+        randimi.setModifiedForm(true);
+    }
+
+    function removePseudonymRegex(elem) {
+        const parent = $(elem).parents('.pseudonymRegexTemplate');
+        const orderNumber = parseInt(parent.find('.pseudonymRegexTemplateFieldset .pseudonymRegexTemplateOrderNumber').val(), 10);
+
+        parent.remove();
+
+        $('.pseudonymRegexTemplate').each((index, element) => {
+            const orderNumberElement = parseInt($(element).find('.pseudonymRegexTemplateFieldset .pseudonymRegexTemplateOrderNumber').val());
+            if (orderNumberElement > orderNumber)
+                decrementTemplateNumbers(element);
+        });
+
+        if (orderNumber === 0)
+            $('#moveUpButton-0').attr('disabled', 'disabled');
+        else {
+            const numTemplates = $('#pseudonymTemplatesFieldset .pseudonymRegexTemplate').length;
+            if (numTemplates > 0 && orderNumber === numTemplates)
+                $('#moveDownButton-' + (orderNumber - 1)).attr('disabled', 'disabled');
+        }
+
+        randimi.setModifiedForm(true);
+    }
+
+    function decrementTemplateNumbers(elem) {
+        const nodesToIncrease = elem.querySelectorAll('.randimi-set-index');
+        for (const node of nodesToIncrease) {
+            let attributes = ['id', 'name'];
+            if (node.dataset['setIndex']) {
+                attributes = node.dataset['setIndex'].split(',');
+            }
+            for (const attribute of attributes) {
+                if (node[attribute]) {
+                    node.setAttribute(attribute, decrementFirstNumberInString(node.getAttribute(attribute)));
+                }
+            }
+        }
+
+        // Set index of legend
+        const legendText = elem.lastElementChild.firstElementChild.firstElementChild;
+        legendText.innerHTML = decrementFirstNumberInString(legendText.innerHTML);
+
+        // Set order number
+        elem.getElementsByClassName('pseudonymRegexTemplateOrderNumber')[0].value -= 1;
+    }
+
+    function decrementFirstNumberInString(string) {
+        return string.replace(/\d+/, match => {
+            return parseInt(match, 10) - 1;
+        });
+    }
+
+    function incrementFirstNumberInString(string) {
+        return string.replace(/\d+/, match => {
+            return parseInt(match, 10) + 1;
+        });
+    }
+
+    function movePseudonymRegexUp(orderNumber) {
+		movePseudonymRegexDown(orderNumber - 1);
+    }
+
+    function movePseudonymRegexDown(orderNumberA) {
+        const orderNumberB = orderNumberA + 1;
+
+        // Title
+        const legendTitleA = document.getElementById('innerTemplateFieldset-' + orderNumberA).firstElementChild.firstElementChild;
+        const legendTitleB = document.getElementById('innerTemplateFieldset-' + orderNumberB).firstElementChild.firstElementChild;
+
+        let tmp = legendTitleA.innerHTML;
+        legendTitleA.innerHTML = decrementFirstNumberInString(legendTitleB.innerHTML);
+        legendTitleB.innerHTML = incrementFirstNumberInString(tmp);
+
+        const swapA = document.getElementById('innerTemplateFieldset-' + orderNumberA).getElementsByClassName('randimi-swap-value');
+        const swapB = document.getElementById('innerTemplateFieldset-' + orderNumberB).getElementsByClassName('randimi-swap-value');
+
+        for (let elementIndex = 0; elementIndex < swapA.length; ++elementIndex) {
+            const elementA = swapA[elementIndex];
+            const elementB = swapB[elementIndex];
+
+            const tmpValue = elementA.value;
+            elementA.value = elementB.value;
+            elementB.value = tmpValue
+        }
+
+        // Flag the form as modified
+        randimi.setModifiedForm(true);
+    }
+
+    function hideAllPseudonymTemplates() {
+        const fieldsets =  document.getElementsByClassName('pseudonymRegexTemplateFieldset');
+        for (const fieldset of fieldsets) {
+            randimi.toggleFieldset($(fieldset.firstElementChild), false);
+            $(fieldset).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideUp('slow');
+        }
+    }
+
+    function showAllPseudonymTemplates() {
+        const fieldsets =  document.getElementsByClassName('pseudonymRegexTemplateFieldset');
+        for (const fieldset of fieldsets) {
+            randimi.toggleFieldset($(fieldset.firstElementChild), true);
+            $(fieldset).parents('.pseudonymRegexTemplate').find('.moveDownButton').parent().slideDown('slow');
+        }
+    }
+
+    /**
+     * Used to reset the color settings to its default values.
+	 */
+	function resetRandIMIColorsToDefault() {
+		document.getElementById('mainColor').value = getComputedStyle(document.documentElement).getPropertyValue('--default-randimi-main-color');
+		document.getElementById('highlightColor').value = getComputedStyle(document.documentElement).getPropertyValue('--default-randimi-highlight-color');
+		document.getElementById('backgroundColor').value = getComputedStyle(document.documentElement).getPropertyValue('--default-randimi-background-color');
+		document.getElementById('mainTextColor').value = getComputedStyle(document.documentElement).getPropertyValue('--default-randimi-main-text-color');
+		document.getElementById('highlightTextColor').value = getComputedStyle(document.documentElement).getPropertyValue('--default-randimi-highlight-text-color');
+	}
+
+	/**
+	 * Used to hide e-mail username and password input if SMTP is unchecked
+	 */
+	function toggleMailSettings() {
+		// Get the checkbox and the div
+		const checkSMPT = document.getElementById("mailSMTPAuth");
+        const smtpAuthDiv = document.getElementById("smtpAuthDiv");
+
+		// If the checkbox is checked, display the inputs
+		if (checkSMPT.checked) {
+            smtpAuthDiv.style.display = "block";
+		} else {
+            smtpAuthDiv.style.display = "none";
+		}
+	}
+
+    async function sendEMail() {
+        const csrfParameterName = /*[[${_csrf.parameterName}]]*/ "";
+        const csrfToken = /*[[${_csrf.token}]]*/ "";
+
+        let request = {}
+        request[csrfParameterName] = csrfToken;
+        request['receiver'] = document.getElementById("receiverEMailAddress").value;
+        request['mailHost'] = document.getElementById("mailHost").value;
+        request['mailPort'] = document.getElementById("mailPort").value;
+        request['mailUsername'] = document.getElementById("mailUsername").value;
+        request['mailPassword'] = document.getElementById("mailPassword").value;
+        request['mailSMTPAuth'] = document.getElementById("mailSMTPAuth").checked;
+        request['mailTLS'] = document.getElementById("mailTLS").checked;
+
+        const sendMailStatus = document.getElementById("sendMailStatus");
+        sendMailStatus.value = /*[[#{settings.edit.testMail.sending}]]*/ "Sending...";
+        sendMailStatus.classList.remove("border-success");
+        sendMailStatus.classList.remove("border-danger");
+        sendMailStatus.classList.add("border-warning");
+
+        const response = await $.ajax({
+            data: request,
+            dataType: "json",
+            header: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            url: randimiConstants.contextPath + "/settings/sendMail",
+            type: "POST"
+        });
+
+        sendMailStatus.value = response.message;
+        sendMailStatus.classList.remove("border-warning");
+        if (response.status === "ok")
+            sendMailStatus.classList.add("border-success");
+        else
+            sendMailStatus.classList.add("border-danger");
+    }
+</script>
+</body>
+</html>

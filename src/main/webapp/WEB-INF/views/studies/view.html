@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{study.show.headline},
+														   links=~{::head/th:block},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="'Randimi - ' + #{study.show.headline}">Randimi - Show Study</title>
+    <th:block>
+        <link rel="stylesheet" type="text/css" charset="utf8" href=""
+              th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+        <script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+
+        <link rel="stylesheet" type="text/css" charset="utf8"
+              th:href="@{/webjars/datatables-select/css/select.dataTables.css}"/>
+        <script type="text/javascript" th:src="@{/webjars/datatables-select/js/dataTables.select.js}"></script>
+    </th:block>
+</head>
+<body>
+<header>
+    <h1 th:text="#{study.show.headline(${study.guiName})}">Show Study</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+
+    <div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='view')}"></div>
+
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Back Button */-->
+        <div th:replace="~{fragments/sidebar.html :: backButton(action=@{/studies})}"></div>
+    </div>
+
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.submenus}">Submenus</div>
+
+        <button id="propertiesButton" type="button" class="btn btn-primary randimi-sidebar-button" onclick="openProperties()">
+            <span class="fas fa-list randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.show.properties}"></span>
+        </button>
+
+        <button id="auditTrailButton" type="button" class="btn btn-primary randimi-sidebar-button"
+                onclick="openAuditTrail()">
+            <span class="fas fa-user-clock randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.show.auditTrail}"></span>
+        </button>
+
+        <!--/* TODO Make visible after adding statistics */-->
+        <button id="statisticsButton" type="button" class="btn btn-primary randimi-sidebar-button d-none"
+                onclick="openStatistics()">
+            <span class="fas fa-list randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.show.statistics}"></span>
+        </button>
+    </div>
+
+    <div id="propertiesActions" class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.subActions}"></div>
+
+        <!--/* Download configuration Button */-->
+        <div sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_SUBJECT)">
+            <form th:action="@{/studies/downloadConfiguration}" method="GET">
+                <button type="submit" class="btn btn-primary randimi-sidebar-button" th:value="${study.id}"
+                        id="downloadButton" name="id">
+                    <span class="fas fa-cloud-download-alt randimi-sidebar-button-icon"></span>
+                    <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.show.downloadConfiguration}"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Content of the current study -->
+<div id="contentDiv">
+    <div id="properties">
+        <div class="mt-2 mx-auto randimi-content-box">
+            <!--- Properties of the study -->
+            <table class="table table-bordered randimi-vertical-table">
+                <tr>
+                    <th th:text="#{study.show.name}">Name</th>
+                    <td th:text="${study.guiName}">Foody</td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.apiId}">API ID</th>
+                    <td th:text="${study.apiId}">FooD</td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.description}">Description</th>
+                    <td th:text="${study.description}">Barscription</td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.algorithm}">Randomization Algorithm</th>
+                    <td th:text="#{${study.randomizationAlgorithm.getOptionName()}}"></td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.pseudonymHandling}">Pseudonym-Handling</th>
+                    <td th:text="#{${study.pseudonymHandling}}">Pseudonym-Handling</td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.status}">Status</th>
+                    <td th:text="#{'enum.StudyStatus.' + ${study.status}}">Status</td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.activationDate}">Activation Date</th>
+                    <td th:text="${study.isActive() || study.isLocked() || study.isArchived()} ? ${#temporals.format(study.activationDate.toInstant(), '__#{datetime.format}__')} : #{configuration.studyNotActivated}">
+                        2020
+                    </td>
+                </tr>
+                <tr>
+                    <th th:text="#{studies.archiveStudy.retentionPeriod}">Retention Period</th>
+                    <td th:text="${study.retentionPeriod != null} ? ${#temporals.format(study.retentionPeriod.toInstant(), '__#{date.format}__')} : #{studies.studyNoRetentionPeriod}"></td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.sites}">Sites</th>
+                    <td>
+                        <ul>
+                            <li th:each="site : ${study.sites}" th:text="${site.guiName} + ' (API ID: ' + ${site.apiId} + ')'"></li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th th:text="#{study.show.studyArms}">Study Arms</th>
+                    <td>
+                        <ul>
+                            <li th:each="studyArm : ${study.studyArms}" th:text="${studyArm.guiName} + ' (API ID: ' + ${studyArm.apiId} + ')'"></li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr th:with="hasNoStrata=${#lists.isEmpty(study.enumeratedStratums)}">
+                    <th th:text="#{study.show.stratums}">Strata
+                    </th>
+                    <td th:if="${hasNoStrata}" th:text="#{study.show.properties.none}">None</td>
+                    <td th:unless="${hasNoStrata}" class="p-0">
+                        <table class="table-borderless w-100 randimi-vertical-table-inner">
+                            <tr th:each="stratum : ${study.enumeratedStratums}">
+                                <td th:text="${stratum.guiName} + ' (API ID: ' + ${stratum.apiId} + ')'"></td>
+                                <td>
+                                    <ul>
+                                        <li th:each="stratumPart : ${stratum.getStratumParts()}"
+                                            th:text="${stratumPart.getDisplayName()} + ' (API ID: ' + ${stratumPart.apiId} + ')'">Stratum Value
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div id="auditTrail"
+         sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_AUDIT_SIMPLE) or @customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_AUDIT_COMPLEX)">
+        <div class="w-100 d-flex mt-2">
+
+            <!-- Right site -->
+            <div style="width: 60%;">
+                <!--- Audit Trail filter -->
+                <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend='Filter', content=~{::#auditTrialFilter}, open=false)}">
+                    <div id="auditTrialFilter" aria-expanded="false" style="display: none;">
+                        <div class="ms-1">
+                            <button type="button" class="btn btn-sm btn-primary"
+                                    onclick="setAllFilter(true); this.blur();"
+                                    th:text="#{study.show.auditTrail.checkAll}">Check All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary"
+                                    onclick="setAllFilter(false); this.blur();"
+                                    th:text="#{study.show.auditTrail.uncheckAll}">Uncheck All
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap ms-1">
+                        <span th:each="auditType, i : ${studyAuditTypes}" class="me-3 form-check-inline"
+                              th:with="text=#{'study.show.auditTrail.filter.STUDY.' + __${auditType.textValue}__}">
+                            <input th:id="|auditTrailFilterStudy${auditType.textValue}|" type="checkbox"
+                                   class="form-check-input me-1" th:data-audit-filter="${text}" onchange="updateFilter(this)"
+                                   checked>
+                            <label th:for="|auditTrailFilterStudy${auditType.textValue}|"
+                                   class="form-check-label" style="width: fit-content;"
+                                   th:text="${text}"></label>
+                        </span>
+                        </div>
+                        <div class="d-flex flex-wrap ms-1">
+                        <span th:each="auditType, i : ${subjectAuditTypes}" class="me-3 form-check-inline"
+                              th:with="text=#{'study.show.auditTrail.filter.SUBJECT.' + __${auditType.textValue}__}">
+                            <input th:id="|auditTrailFilterSubject${auditType.textValue}|" type="checkbox"
+                                   class="form-check-input me-1" th:data-audit-filter="${text}"
+                                   onchange="updateFilter(this)" checked>
+                            <label th:for="|auditTrailFilterSubject${auditType.textValue}|"
+                                   class="form-check-label" style="width: fit-content;"
+                                   th:text="${text}"></label>
+                        </span>
+                        </div>
+                        <div class="d-flex flex-wrap ms-1">
+                        <span th:each="auditType, i : ${randimiUserAuditTypes}" class="me-3 form-check-inline"
+                              th:with="text=#{'study.show.auditTrail.filter.RANDIMI_USER.' + __${auditType.textValue}__}">
+                            <input th:id="|auditTrailFilterRandimiUser${auditType.textValue}|" type="checkbox"
+                                   class="form-check-input me-1"
+                                   th:data-audit-filter="${text}" onchange="updateFilter(this)" checked>
+                            <label th:for="|auditTrailFilterRandimiUser${auditType.textValue}|"
+                                   class="form-check-label" style="width: fit-content;"
+                                   th:text="${text}"></label>
+                        </span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!--- Simple audit Trail table -->
+                <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.show.auditTrail.table}, content=~{::#auditTrailWrap})}">
+                    <div id="auditTrailWrap" class="randimi-dataTables">
+
+                        <table id="auditTrailTable" class="randimi-table">
+                            <thead>
+                            <tr>
+                                <th th:text="#{study.show.auditTrail.dataAndTime}">Data and Time</th>
+                                <th th:text="#{study.show.auditTrail.user}">User</th>
+                                <th th:text="#{study.show.auditTrail.action}">Action</th>
+                                <!-- Hidden column for sorting the date column -->
+                                <th>Date and Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="auditEntry : ${auditEntries}" onclick="updateAuditContent(this)"
+                                th:data-audit-content="${auditEntry.content}"
+                                th:data-audit-old-content="${auditEntry.oldContent}"
+                                th:data-audit-reason="${auditEntry.reason}">
+                                <td th:with="date=${#temporals.format(auditEntry.getTimestamp().toInstant(), '__#{datetimeSeconds.format}__')}"
+                                    th:data-search="${date} + ' ' + ${#strings.defaultString(auditEntry.reason, '')} + ' ' + ${#strings.defaultString(auditEntry.oldContent, '')} + ' ' + ${#strings.defaultString(auditEntry.content, '')}"
+                                    th:text="${date}"></td>
+                                <td th:text="${auditEntry.username}"></td>
+                                <td th:text="#{study.show.auditTrail.filter.__${auditEntry.auditClass.textValue}__.__${auditEntry.auditType.textValue}__}"></td>
+                                <td th:text="${auditEntry.timestamp.getTime()}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Left site -->
+            <div class="ps-2" style="width: 40%;">
+
+                <!-- Reason -->
+                <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.show.auditTrail.changeReason}, content=~{::#changeReason})}">
+                    <div id="changeReason">
+                        <div>
+                        <span id="auditReason" style="min-height: 10px;"
+                              th:text="#{study.show.auditTrail.noChangeReason}"></span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Changes -->
+                <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.show.auditTrail.changes}, content=~{::#changes})}">
+                    <div id="changes">
+                        <div class="d-flex border">
+                            <div class="border-right" style="width: 50%;">
+                                <div class="text-center border-bottom" th:text="#{study.show.auditTrail.old}">Old</div>
+                                <div>
+                                <pre id="auditOldContent" class="randimi-audit-content"
+                                     th:text="#{study.show.auditTrail.noChanges}"></pre>
+                                </div>
+                            </div>
+                            <div style="width: 50%">
+                                <div class="text-center border-bottom" th:text="#{study.show.auditTrail.new}">New</div>
+                                <div>
+                                <pre id="auditContent" class="randimi-audit-content"
+                                     th:text="#{study.show.auditTrail.noChanges}"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+            </div>
+        </div>
+    </div>
+    <div id="statistics">
+    </div>
+</div>
+<script type="text/javascript" th:inline="javascript">
+    let filterList = [];
+    const allFilter = [];
+    const noChangeReason = /*[[#{study.show.auditTrail.noChangeReason}]]*/ 'No Change Reason';
+    const noChanges = /*[[#{study.show.auditTrail.noChanges}]]*/ 'No Changes';
+    let selectedAudit = null;
+    let auditTrailDataTable = null;
+
+    $(document).ready(async function () {
+        let auditType;
+        /*[# th:each="auditType : ${studyAuditTypes}"]*/
+        auditType = /*[[#{'study.show.auditTrail.filter.STUDY.' + __${auditType.textValue}__}]]*/ '';
+        filterList.push(auditType);
+        allFilter.push(auditType);
+        /*[/]*/
+        /*[# th:each="auditType : ${subjectAuditTypes}"]*/
+        auditType = /*[[#{'study.show.auditTrail.filter.SUBJECT.' + __${auditType.textValue}__}]]*/ '';
+        filterList.push(auditType);
+        allFilter.push(auditType);
+        /*[/]*/
+        /*[# th:each="auditType : ${randimiUserAuditTypes}"]*/
+        auditType = /*[[#{'study.show.auditTrail.filter.RANDIMI_USER.' + __${auditType.textValue}__}]]*/ '';
+        filterList.push(auditType);
+        allFilter.push(auditType);
+        /*[/]*/
+
+        const opts = {
+            columnDefs: [
+                {
+                    "orderData": [3],
+                    "targets": [0]
+                },
+                {
+                    "targets": 3,
+                    "visible": false,
+                    "searchable": false,
+                }
+            ],
+            order: [0, 'desc'],
+            select: {
+                info: false,
+                style: 'single',
+                toggleable: false
+            }
+        }
+
+        auditTrailDataTable = await randimi.setUpDatatable('auditTrailTable', opts);
+        setTimeout(() => {
+            updateAuditTable(auditTrailDataTable);
+        }, 100);
+        openProperties();
+    });
+
+    function openProperties() {
+        open('properties');
+
+        const propertiesActions = document.getElementById('propertiesActions');
+        if (propertiesActions) {
+            propertiesActions.style.display = '';
+        }
+    }
+
+    function openAuditTrail() {
+        open('auditTrail');
+    }
+
+    function openStatistics() {
+        open('statistics');
+    }
+
+    function open(elementId) {
+        document.getElementById('properties').style.display = 'none';
+        const propertiesButton = document.getElementById('propertiesButton');
+        propertiesButton.classList.remove("randimi-sidebar-button-selected");
+
+        // Might not be available if missing permissions
+        const propertiesActions = document.getElementById('propertiesActions');
+        if (propertiesActions) {
+            propertiesActions.style.display = 'none';
+        }
+
+        // Might not be available if missing permissions
+        const auditTrailDiv = document.getElementById('auditTrail')
+        if (auditTrailDiv) {
+            auditTrailDiv.style.display = 'none';
+        }
+        const auditTrailButton = document.getElementById('auditTrailButton');
+        if (auditTrailButton) {
+            auditTrailButton.classList.remove("randimi-sidebar-button-selected");
+        }
+
+        document.getElementById('statistics').style.display = 'none';
+        const statisticsButton = document.getElementById('statisticsButton');
+        statisticsButton.classList.remove("randimi-sidebar-button-selected");
+
+        document.getElementById(elementId).style.display = 'block';
+        const targetButton = document.getElementById(elementId + 'Button');
+        targetButton.classList.add("randimi-sidebar-button-selected");
+        targetButton.blur();
+    }
+
+    function updateFilter(inputElement) {
+        const value = inputElement.checked;
+        const auditType = inputElement.dataset['auditFilter'];
+
+        const containsAuditType = filterList.includes(auditType);
+
+        if (value && !containsAuditType) {
+            filterList.push(auditType);
+        } else if (!value && containsAuditType) {
+            const index = filterList.indexOf(auditType);
+            filterList.splice(index, 1);
+        }
+
+        updateAuditTable(auditTrailDataTable);
+    }
+
+    function updateAuditTable(table) {
+        let regex = '^$'
+
+        for (const auditType of filterList) {
+            regex += '|^' + auditType + '$';
+        }
+
+        table.column(2).search(regex, {regex: true, smart: false}).draw();
+    }
+
+    function updateAuditContent(tableRowElement) {
+        if (selectedAudit !== null) {
+            selectedAudit.classList.toggle('randimi-row-selected');
+        }
+        selectedAudit = tableRowElement;
+
+        tableRowElement.classList.toggle('randimi-row-selected');
+
+        document.getElementById('auditContent').innerText = tableRowElement.dataset['auditContent'] ?? noChanges;
+        document.getElementById('auditOldContent').innerText = tableRowElement.dataset['auditOldContent'] ?? noChanges;
+        document.getElementById('auditReason').innerText = tableRowElement.dataset['auditReason'] ?? noChangeReason;
+    }
+
+    function setAllFilter(value) {
+        const checkboxes = document.querySelectorAll('[id^="auditTrailFilter"]')
+        for (const checkbox of checkboxes) {
+            checkbox.checked = value;
+        }
+
+        if (value) {
+            filterList = [...allFilter];
+        } else {
+            filterList = [];
+        }
+
+        updateAuditTable(auditTrailDataTable);
+    }
+</script>
+</body>
+</html>

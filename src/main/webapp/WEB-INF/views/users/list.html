@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * @author Daniel Preciado-Marquez
+     */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{users.users},
+														   links=~{::head/th:block},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<title th:text="'Randimi - ' + #{users.users}">RandIMI - Users</title>
+	<th:block>
+		<link rel="stylesheet" type="text/css" charset="utf8" href=""
+		      th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+		<script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+	</th:block>
+</head>
+<body>
+<header>
+	<h1 id="userMonitorHeadline" class="selenium-language-test" th:text="#{users.monitor.headline}">List of all Users</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+		<!-- Button to invite a new user -->
+		<form th:replace="~{fragments/sidebar.html :: sidebarAction(action=@{/users/invite}, icon='fa-user-plus', id='userInviteButton', label=#{users.monitor.inviteUser})}" ></form>
+
+		<!--/* Back-button to the main page */-->
+		<form th:replace="~{fragments/sidebar.html :: backButton(action=@{/})}"></form>
+	</div>
+</div>
+
+<div id="contentDiv" class="randimi-content-box randimi-dataTables" sec:authorize="hasAnyRole('ROLE_ADMIN', T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_LOCAL_MANAGER, 'ROLE_USER_MANAGER')">
+	<table id="userTable" class="randimi-table">
+		<thead>
+		<tr>
+			<th id="tableHeadUserName" class="selenium-language-test" style="min-width: 150px; text-align: center;"
+			    th:text="#{users.monitor.username}">User Name
+			</th>
+			<th id="tableHeadStatus" class="selenium-language-test" style="min-width: 70px; text-align: center;"
+			    th:text="#{users.monitor.enabled}">Enabled
+			</th>
+			<th id="tableHeadFullName" class="selenium-language-test" style="min-width: 200px; text-align: center;"
+			    th:text="#{users.monitor.fullName}">Full Name
+			</th>
+			<th id="tableHeadEmail" class="selenium-language-test" style="min-width: 300px; text-align: center;"
+			    th:text="#{users.monitor.mail}">E-Mail
+			</th>
+			<th id="tableHeadActions" class="selenium-language-test" style="min-width: 100px; text-align: center;"
+			    th:text="#{users.monitor.action}">Action
+			</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr id="tableEntry" th:each="user : ${users}">
+			<td id="tableEntryUserName" th:text="${user.getUsername()}" style="text-align: left;">tobias</td>
+			<td id="tableEntryStatus" th:text="${user.isEnabled()}">true</td>
+			<td id="tableEntryFullName" th:text="${user.getFirstName()} + ' ' + ${user.getLastName()}">Tobiasu
+				Burikesu
+			</td>
+			<td id="tableEntryEmail" th:text="${user.getEMail()}">tobias@brix.de</td>
+			<td>
+				<div class="randimi-column-action">
+
+					<th:block th:if="${user.getId()} != ${authenticatedUser.getId()} and (!${user.userRoles.contains('ROLE_ADMIN')} or ${authenticatedUser.hasUserRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN)})">
+						<th:block th:if="${user.getInvitationToken() != null}"
+						          sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER) or #vars.user.invitedBy == #authentication.getName()">
+							<a id="buttonEditInvitation" th:href="@{users/invite(id=${user.getId()})}">
+								<span id="labelEditInvitation" class="fas fa-pencil-alt selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.editInvitation}"
+								      title="Edit Invitation"></span>
+							</a>
+							<a id="buttonViewInvitation" th:href="@{users/invitation(id=${user.getId()})}">
+								<span id="labelResendInvitation" class="fas fa-envelope selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.viewInvitation}"
+								      title="View invitation"></span>
+							</a>
+							<a id="buttonDeleteUser" data-bs-target="#deleteUserPopup" data-bs-toggle="modal" href=""
+							   th:attr="onclick=|updateDeleteUserPopup(${user.getId()}, '${user.getUsername()}')|">
+								<span id="labelDeleteUser" class="fas fa-user-slash selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.deleteUser}"></span>
+							</a>
+						</th:block>
+						<th:block th:unless="${user.getInvitationToken() != null}"
+						          sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER)">
+
+							<!-- enable/disable -->
+							<a sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER)"
+							   id="buttonDisableUser" th:if="${user.enabled}"
+							   th:href="@{users/disableUser(id=${user.getId()})}">
+								<span id="labelDisableUser" class="fas fa-lock-open selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.disableUser}"
+								      title="Disable User"></span>
+							</a>
+							<a sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER)"
+							   id="buttonEnableUser" th:unless="${user.enabled}"
+							   th:href="@{users/enableUser(id=${user.getId()})}">
+								<span id="labelEnableUser" class="fas fa-lock selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.enableUser}"
+								      title="Enable User"></span>
+							</a>
+							<a sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER)"
+							   id="buttonEditUserRoles" th:href="@{users/editRoles(id=${user.getId()})}">
+								<span id="labelEditUserRoles" class="fas fa-user-tag selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.editUserRoles}"
+								      title="Edit User Roles"></span>
+							</a>
+							<a sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_USER_MANAGER)"
+							   id="buttonDeleteUser" data-bs-target="#deleteUserPopup" data-bs-toggle="modal" href=""
+							   th:attr="onclick=|updateDeleteUserPopup(${user.getId()}, '${user.getUsername()}')|">
+								<span id="labelDeleteUser" class="fas fa-user-slash selenium-language-test"
+								      aria-hidden="true" th:title="#{users.monitor.deleteUser}"></span>
+							</a>
+						</th:block>
+					</th:block>
+				</div>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId='deleteUserPopup', popupTitleMessageCode='users.monitor.deleteUserPopup.header', bodyContent=~{::#deleteUserPopupBody}, footerContent=~{::#deleteUserPopupFooter})}">
+		<div id="deleteUserPopupBody">
+			<div id="confirmationQuestion">
+			</div>
+		</div>
+		<div id="deleteUserPopupFooter">
+			<form method="POST" th:action="@{/users/delete}">
+                <input id="userId" name="userId" type="hidden" class="form-control" value=""/>
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}"></button>
+				<button type="submit" class="btn btn-primary" id="addButton" th:text="#{users.monitor.deleteUserPopup.confirm}"></button>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript" th:inline="javascript">
+	$(document).ready(function() {
+        const opts = {
+            "columnDefs": [
+                {
+                    "targets": 4,
+                    "orderable": false,
+                    "searchable": false,
+                }
+            ]
+        };
+		randimi.setUpDatatable('userTable', opts);
+	});
+
+	function updateDeleteUserPopup(userId, userName) {
+		const confirmationQuestion = /*[[#{users.monitor.deleteUserPopup.confirmationQuestion}]]*/ '';
+		const confirmationUpdated = confirmationQuestion.replace("__USERNAME__", userName);
+		document.getElementById('confirmationQuestion').innerText = confirmationUpdated;
+		document.getElementById('userId').value = userId;
+	}
+</script>
+</body>
+</html>

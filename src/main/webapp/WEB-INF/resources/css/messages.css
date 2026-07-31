@@ -1,0 +1,36 @@
+.message-box {
+	padding: 15px;
+	margin-top: 10px !important;
+	margin-bottom: var(--randimi-content-margin);
+	border: 1px solid transparent;
+	border-radius: var(--randimi-border-radius);
+	text-align: center;
+}
+
+.error-message {
+	--randimi-color-error: #a94442;
+	background-color: #f2dede;
+	border-color: var(--randimi-color-error);
+	color: var(--randimi-color-error);
+}
+
+.success-message {
+	--randimi-color-success: #00632e;
+	background-color: #ddf7da;
+	border-color: var(--randimi-color-success);
+	color: var(--randimi-color-success);
+}
+
+.info-message {
+	--randimi-color-info: #0054a1;
+	background-color: #d1f1ff;
+	border-color: var(--randimi-color-info);
+	color: var(--randimi-color-info);
+}
+
+.warn-message {
+	--randimi-color-warn: #c7a40f;
+	background-color: #f7f1da;
+	border-color: var(--randimi-color-warn);
+	color: var(--randimi-color-warn);
+}

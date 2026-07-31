@@ -1,0 +1,34 @@
+networks:
+    randimi-network:
+
+services:
+    randimi-db:
+        image: postgres:16-alpine
+        container_name: randimi-db
+        restart: on-failure
+        ports:
+            - "127.0.0.1:5432:5432"
+        networks:
+            - randimi-network
+        environment:
+            # Has to match the datasource settings of the randimi container
+            - POSTGRES_DB=${PG_DATABASE}
+            - POSTGRES_USER=${PG_USERNAME}
+            - POSTGRES_PASSWORD=${PG_PASSWORD}
+        volumes:
+            - ${PG_DATA_PATH}:/var/lib/postgresql
+    randimi-app:
+        image: ghcr.io/imi-ms/randimi:${RANDIMI_IMAGE_TAG}
+        container_name: randimi-app
+        restart: on-failure:3
+        ports:
+            - "127.0.0.1:8080:8080"
+        networks:
+            - randimi-network
+        environment:
+            # Datasource has to match with the configuration of the cinnamon-db container
+            SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
+            SPRING_DATASOURCE_URL: jdbc:postgresql://randimi-db:5432/${PG_DATABASE}
+            SPRING.DATASOURCE.USERNAME: ${PG_USERNAME}
+        depends_on:
+            - randimi-db

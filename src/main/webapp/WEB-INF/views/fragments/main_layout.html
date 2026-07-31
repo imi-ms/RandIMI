@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/** 
+	 * Thymeleaf fragment containing the main layout of RandIMI. 
+	 *
+	 * @param title (String) Title of the current page shown in the browser tab.
+	 * @param links (fragment,optional) Links to CSS and JS Files.
+	 * @param header (fragment) Header of the current page. May be ~{}.
+	 * @param content (fragment) Content of the page. Normally a <div id="contentDiv">.
+	 * @param script (fragment) Scripts at the bottom of the page. May be ~{}.
+	 * @param sidebar (fragment) Content of the sidebar. May be ~{}.
+	 * @param error (model,optional) String containing error messages.
+	 * @param success (model,optional) String containing success messages.
+	 * @param msg (model,optional) String containing msg messages.
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+     */-->
+<html th:fragment="common_layout(title,header,content,script)"
+      th:with="links = ${links} ?: ~{}, sidebar = ${sidebar} ?: null"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.toString()}">
+	<!--/* Fragment common_head containing all common CSS and JS files. */-->
+	<head th:replace="~{fragments/head :: common_head(${title},${links})}">
+		<title>RandIMI</title>
+	</head>
+	<body>
+		<!--/* Container used to define 100% content height. */-->
+		<div id="page-container" class="page-cont">
+			<!--/* Fragment common_navbar containing the common navbar. */-->
+			<div th:replace="~{fragments/navbar :: common_navbar}"/>
+			<!--/* Container used to split "content" from navbar and "footer". */-->
+			<div id="content-wrap" class="content-wrap">
+				<div class="randimi-flex-row">
+
+					<!--/* Sidebar */-->
+					<div th:if="${sidebar != null}" id="sidebar" class="randimi-sidebar randimi-flex-row-fix">
+						<div th:replace="${sidebar}"></div>
+					</div>
+
+					<div id="content-wrap2" class="randimi-inner-content-wrap randimi-flex-row-dynamic">
+
+						<!--/* Header which content is set by the fragment parameter. */-->
+						<header th:if="${header}" id="header" class="randimi-content-header" th:insert="${header}">
+						</header>
+						<!--/* Fragments of common error, success and msg messages between header and content. */-->
+						<div th:replace="~{fragments/messages :: common_msg_error(${error})}"></div>
+						<div th:replace="~{fragments/messages :: common_msg_success(${success})}"></div>
+						<div th:replace="~{fragments/messages :: common_msg_normal(${msg})}"></div>
+						<div th:replace="~{fragments/messages :: common_msg_info(${info})}"></div>
+						<div th:replace="~{fragments/messages :: common_msg_unsaved_changes}"></div>
+						<!--/* Show multiple content tags set by the fragment parameter. */-->
+						<th:block th:replace="${content}"/>
+					</div>
+
+				</div>
+
+			</div><!--/* content-wrap */-->
+			<!--/* Fragment common_footer containing copyright and imprint */-->
+			<footer th:replace="~{fragments/footer :: common_footer}"/>
+		</div><!--/* page-container */-->
+	</body>
+	<!--/* Frequently used variables and messages in inline scripts and randimi.js */-->
+	<script type="text/javascript" th:inline="javascript">
+        const randimiConstants = {
+            'lang': /*[[${#locale}]]*/ "",
+            'contextPath': /*[[|${contextPath}]]*/ "",
+            'appVersion': /*[[${appVersion}]]*/ ""
+        };
+	</script>
+	<script th:replace="${script}" th:inline="javascript"></script>
+</html>

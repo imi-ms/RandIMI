@@ -1,0 +1,897 @@
+
+/*
+ * Default values of RandIMI
+ * No space after : since the space is copied into the input and destroys everything.
+ */
+
+:root {
+	/* Used for resetting to default colors */
+	--default-randimi-main-color:#00632e;
+	--default-randimi-highlight-color:#97bf0d;
+	--default-randimi-background-color:#f7f7f7;
+	--default-randimi-main-text-color:#000000;
+	--default-randimi-highlight-text-color:#f7f7f7;
+
+	--randimi-border-color: color(from var(--randimi-background-color) srgb calc(r - 0.07) calc(g - 0.07) calc(b - 0.07));
+	--randimi-background-shadow-color: color(from var(--randimi-background-color) srgb calc(r - 0.07) calc(g - 0.07) calc(b - 0.07));
+	--randimi-color-background-input: color(from var(--randimi-background-color) srgb calc(r + 0.07) calc(g + 0.07) calc(b + 0.07));
+	--randimi-color-background-input-disabled: color(from var(--randimi-background-color) srgb calc(r - 0.04) calc(g - 0.04) calc(b - 0.04));
+
+	--randimi-border-radius: 15px;
+	--randimi-border-width: 2px;
+	--randimi-content-margin: 2rem;
+	--randimi-content-padding: 1rem;
+
+	--randimi-disabled-opacity: .65;
+
+	--randimi-switch-height: 24px;
+	--randimi-switch-width: 46px;
+	--randimi-switch-slider-diameter: 18px;
+}
+
+/* Change bootstrap colors */
+input[type=checkbox] {
+	color: var(--randimi-main-color) !important;
+	background-color: var(--randimi-color-background-input) !important;
+	border-color: var(--randimi-border-color) !important;
+	height: 1rem;
+	width: 1rem;
+}
+
+input[type=checkbox]:checked {
+	background-color: var(--randimi-main-color) !important;
+}
+
+.form-check-input:disabled ~ .form-check-label {
+	opacity: 1;
+}
+
+input:not([type=button]):not([type=submit]):not([type=checkbox]), textarea:not(.important), select:not(.important),
+textarea:not(.important):focus, select:not(.important):focus {
+	background-color: var(--randimi-color-background-input);
+	border-color: var(--randimi-border-color);
+	color: var(--randimi-main-text-color);
+}
+
+input:not([type=button]):not([type=submit]):not([type=checkbox]):disabled,
+textarea:disabled,
+select:disabled,
+input:not([type=button]):not([type=submit]):not([type=checkbox]):read-only,
+textarea:read-only {
+	background-color: var(--randimi-color-background-input-disabled) !important;
+}
+
+input::placeholder {
+	color: var(--randimi-main-text-color) !important;
+}
+
+.btn-primary, .btn-primary.disabled, .btn-primary:disabled {
+  background-color: var(--randimi-main-color);
+  border-color: var(--randimi-main-color);
+  color: var(--randimi-highlight-text-color) !important;
+}
+.btn-primary:not(:disabled):hover {
+  background-color: var(--randimi-highlight-color);
+  border-color: var(--randimi-highlight-color);
+  color: var(--randimi-highlight-text-color) !important;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active, .btn-primary:not(:disabled):not(.disabled).active,
+.show > .btn-primary.dropdown-toggle {
+  background-color: var(--randimi-highlight-color);
+  border-color: var(--randimi-highlight-color);
+  color: var(--randimi-highlight-text-color) !important;
+}
+
+.btn-primary:focus, .btn-primary.focus, .btn-primary:not(:disabled):not(.disabled):active:focus,
+.btn-primary:not(:disabled):not(.disabled).active:focus, .show > .btn-primary.dropdown-toggle:focus {
+	background-color: var(--randimi-main-color);
+	border-color: var(--randimi-main-color);
+	box-shadow: 0 0 0 0.2rem var(--randimi-highlight-color);
+}
+
+.bg-primary {
+  background-color: var(--randimi-main-color) !important;
+}
+
+a.bg-primary:hover, a.bg-primary:focus,
+button.bg-primary:hover,
+button.bg-primary:focus {
+  background-color: var(--randimi-main-color) !important;
+}
+
+.border-primary {
+  border-color: var(--randimi-main-color) !important;
+}
+
+.text-primary {
+  color: var(--randimi-main-color) !important;
+}
+
+a.text-primary:hover, a.text-primary:focus {
+  color: var(--randimi-main-color) !important;
+}
+
+a {
+  color: var(--randimi-main-color);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--randimi-highlight-color);
+  text-decoration: underline;
+}
+
+h3 {
+	color: var(--randimi-main-text-color) !important;
+}
+
+.card {
+	background-color: var(--randimi-background-color);
+}
+
+.dropdown-menu {
+	background-color: var(--randimi-color-background-input);
+}
+
+/* classes if only background/main text/highlight text are needed */
+.full-bg {
+	/*background-color: var(--randimi-background-color) !important;*/
+	background-color: var(--randimi-color-background-input) !important;
+}
+
+.full-mt {
+	color: var(--randimi-main-text-color) !important;
+}
+
+.full-ht {
+	color: var(--randimi-highlight-text-color) !important;
+}
+
+.input-group-text {
+	background-color: var(--randimi-color-background-input-disabled) !important;
+	border-color: var(--randimi-border-color) !important;
+	color: var(--randimi-main-text-color) !important;
+}
+
+.modal-footer, .modal-header {
+	border-color: var(--randimi-border-color);
+}
+
+.nav-tabs {
+	border-color: var(--randimi-border-color);
+}
+
+.nav-tabs .nav-link.active {
+	border-color: var(--randimi-border-color);
+	background-color: var(--randimi-color-background-input);
+}
+
+.nav-tabs .nav-link:not(.active):hover {
+	border-color: var(--randimi-border-color);
+}
+
+.nav-tabs .nav-link:not(.active):hover > label {
+	color: var(--randimi-highlight-color);
+}
+
+.nav-tabs .nav-link > label {
+	color: var(--randimi-main-color);
+	cursor: pointer;
+}
+
+.nav-item .navbar-text {
+	color: var(--randimi-highlight-text-color);
+}
+
+.table {
+	color: var(--randimi-main-text-color);
+}
+
+/* Change data tables colors */
+.randimi-dataTables div.dt-container .dt-paging .dt-paging-button.current,
+	.randimi-dataTables div.dt-container .dt-paging .dt-paging-button.current:hover {
+	background: var(--randimi-main-color);
+	color: var(--randimi-highlight-text-color) !important;
+	border: none;
+	border-radius: .25rem;
+}
+
+.randimi-dataTables div.dt-container .dt-paging .dt-paging-button {
+	color: var(--randimi-main-color) !important;
+}
+
+.randimi-dataTables div.dt-container .dt-paging .dt-paging-button:not(.current):not(.disabled):hover {
+	background: var(--randimi-background-color);
+	border: solid 1px var(--randimi-highlight-color);
+	border-radius: .25rem;
+	color: var(--randimi-highlight-color) !important;
+}
+
+.randimi-dataTables div.dt-container .dt-paging .dt-paging-button.disabled {
+	opacity: var(--randimi-disabled-opacity);
+}
+
+::-webkit-scrollbar {
+	height: 12px;
+}
+
+::-webkit-scrollbar-track {
+	border-radius: 0;
+	background: var(--randimi-color-background-input);
+}
+
+::-webkit-scrollbar-thumb {
+	border-radius: 0;
+	background: var(--randimi-main-color);
+}
+
+/* Main CSS part */
+
+/* Main classes used in most pages */
+
+
+html, body {
+	height: 100%;
+	overflow: hidden;
+	background-color: var(--randimi-background-color) !important;
+}
+
+#page-container {
+	height: 100%;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--randimi-background-color) !important;
+}
+
+#content-wrap {
+	flex: 1 1 auto;
+	overflow: auto;
+	position: relative;
+}
+
+#content-wrap2 {
+	color: var(--randimi-main-text-color) !important;
+	padding: var(--randimi-content-margin);
+	display: flex;
+	flex-direction: column;
+	min-width: fit-content;
+}
+
+.randimi-inner-content-wrap {
+	height: 100%;
+	overflow: auto;
+	width: 80vw;
+	background-color: var(--randimi-background-shadow-color);
+}
+
+#footer {
+	flex: 0 0 auto;
+	padding-bottom: 0.5rem;
+	padding-top: 0.5rem;
+	width: 100%;
+}
+
+
+/* Mark elements with the required class with an asterisk */
+.required:after {
+    content:"*";
+	color: red;
+}
+
+h1 {
+	margin-top:    10px !important;
+	margin-bottom:  0px !important;
+	color: var(--randimi-main-text-color) !important;
+}
+
+.form-control, .input-group {
+	border-color: var(--randimi-border-color) !important;
+	width: -moz-available;          /* WebKit-based browsers will ignore this. */
+    width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+    width: stretch;
+}
+
+.centered {
+  position: absolute;
+  top: 450px;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+}
+
+.plusminus {
+	margin: 5px;
+}
+
+.enumeratedStratum {
+	margin-bottom: 25px;
+}
+
+label {
+	font-weight: 600;
+}
+
+.error {
+	color: red;
+	width:100%;
+}
+
+td, th {
+	padding: 5px 20px 5px 10px;
+}
+
+#header {
+	width: 100%;
+}
+
+#radioDiv label {
+	width: auto !important;
+}
+
+/**
+ * Change color on language selection
+ */
+.language-li:hover a {
+	margin: 0px;
+	display: block;
+	width: 100%;
+	height: 100%;
+	color:white;
+	background-color: var(--randimi-highlight-color);
+	text-decoration: none;
+}
+
+.nav-highlight {
+	border-radius: .25rem;
+	transition: background-color .15s ease-in-out;
+}
+
+.nav-highlight:hover {
+	background-color: var(--randimi-highlight-color);
+}
+
+/* Navbar*/
+
+#navbar {
+	flex: 0 0 auto;
+}
+
+.navbar {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.navbar-nav .nav-item {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+/* used for all buttons in bottom navbar */
+.btn-navbar {
+	color: var(--randimi-highlight-text-color) !important;
+}
+
+.btn-navbar:hover {
+	text-decoration: none;
+}
+
+/* logout button in top navbar */
+.btn-logout {
+	color: var(--randimi-main-color);
+}
+
+.btn-logout:hover {
+	text-decoration: none;
+	color: var(--randimi-highlight-color);
+}
+
+/* Popup */
+.popup {
+	color: var(--randimi-main-text-color) !important;
+}
+
+.popup-header {
+	background-color: var(--randimi-background-color) !important;
+}
+
+.popup-body {
+	max-height: 80vh;
+	overflow: auto;
+	padding: 3% 3% 7% 3%;
+}
+
+.popup-content {
+	background-color: var(--randimi-background-color) !important;
+	color: var(--randimi-main-text-color) !important;
+	width: 40vw;
+}
+
+.hline-bottom {
+    padding-bottom: 10px;
+    border-bottom: 2px solid #000; /* whichever color you prefer */
+}
+
+.text-box {
+	width:70vw;
+	height:20vh;
+}
+
+.pseudonymRegexTemplate:not(:last-child) {
+	margin-bottom: 0.7rem;
+}
+
+.randimi-audit-content {
+	color: var(--randimi-main-text-color);
+	margin-bottom: 0;
+	padding: 0.2rem;
+	white-space: pre;
+}
+
+.randimi-autocomplete {
+	position: relative;
+	z-index: 3;
+}
+
+.randimi-autocomplete-selected {
+	display: flex;
+	gap: 0.4rem;
+	flex-direction: row;
+}
+
+.randimi-autocomplete-selected-item {
+	background-color: var(--randimi-color-background-input);
+	border: var(--randimi-border-color) solid 1px;
+	border-radius: var(--randimi-border-radius);
+	margin-top: 0.4rem;
+	padding: 2px 10px;
+}
+
+.randimi-autocomplete-selected-item-icon {
+	color: var(--randimi-main-color);
+	cursor: pointer;
+}
+
+.randimi-autocomplete-selected-item-icon:hover {
+	color: var(--randimi-highlight-color);
+}
+
+.randimi-autocomplete-selected-item-value {
+	margin-left: 0.3rem;
+}
+
+.randimi-autocomplete-suggestions {
+	background-color: var(--randimi-color-background-input);
+	border: var(--randimi-highlight-color) solid 2px;
+	border-radius: 6px;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 100%;
+}
+
+.randimi-autocomplete-suggestion {
+	cursor: pointer;
+	padding: 12px 8px;
+	width: 100%;
+}
+
+.randimi-autocomplete-suggestion:hover {
+	background-color: var(--randimi-highlight-color);
+}
+
+.randimi-autocomplete-template {
+	display: none;
+}
+
+.randimi-chart {
+	width: 100%;
+	height: 400px;
+	background-color: var(--randimi-color-background-input);
+	border-radius: var(--bs-border-radius);
+	border: var(--randimi-border-color) solid 1px;
+}
+
+.randimi-column-action {
+	display: flex;
+}
+
+.randimi-column-action > * {
+	display: flex;
+	flex-direction: row;
+	width: 24px;
+}
+.randimi-column-action > * > * {
+	margin: auto;
+}
+
+.randimi-content-box {
+	background-color: var(--randimi-background-color);
+	border: var(--randimi-main-color) solid var(--randimi-border-width);
+	border-radius: var(--randimi-border-radius);
+	padding: var(--randimi-content-padding) !important;
+}
+
+.randimi-content-box:not(:last-child) {
+	margin-bottom: 0.7rem;
+}
+
+.randimi-content-header:has(*) {
+	margin-bottom: 1.5rem;
+	margin-top: 0;
+	text-align: center;
+}
+
+.randimi-content-header > h1 {
+	width: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 0 !important;
+	margin-top: 0 !important;
+
+	padding-left: 1rem;
+	padding-right: 1rem;
+	padding-bottom: 0.3rem;
+	border-bottom: 2px solid var(--randimi-main-text-color);
+	border-radius: var(--randimi-border-radius);
+}
+
+.randimi-content-legend {
+	background-color: var(--randimi-background-color);
+	border-radius: var(--randimi-border-radius);
+	border: var(--randimi-border-width) solid var(--randimi-main-color);
+	border-bottom-width: 0;
+	float: none;
+	font-weight: bold;
+	margin-bottom: 0;
+	padding-left: 10px;
+	padding-right: 10px;
+	position: relative;
+	width: auto;
+}
+
+.randimi-content-legend > span, svg {
+	position: relative;
+	z-index: 2;
+}
+
+.randimi-content-legend:after {
+	content: '';
+	width: 110%;
+	height: 18px;
+	background: var(--randimi-background-color);
+	position: absolute;
+	left: -2px;
+	bottom: 0;
+}
+
+/* Flex box */
+.randimi-flex-row {
+	display: flex;
+	flex-flow: row;
+	height: 100%;
+}
+
+.randimi-flex-row-fix {
+	flex: 0 0 auto;
+}
+
+.randimi-flex-row-dynamic {
+	flex: 1 1 auto;
+}
+
+.randimi-grid-checkbox-group {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.randimi-logo {
+	max-width: 100%;
+	width: 700px;
+}
+
+/* Test input for regex fields */
+.randimi-overlapping {
+	background-color: transparent;
+	left: 0;
+	position: absolute;
+	top: 0;
+}
+
+.randimi-regex-highlight-accept {
+	background-color: #ddf7da;
+}
+
+.randimi-regex-highlight-decline {
+	background-color: #ebccd1;
+}
+
+.randimi-regex-highlight {
+	color: transparent;
+	display: inline-block;
+	overflow: hidden;
+	white-space: pre-wrap;
+}
+
+.randimi-regex-control {
+	background-color: var(--randimi-color-background-input);
+}
+
+.randimi-regex-text {
+	color: black !important;
+	background: transparent !important;
+}
+
+.randimi-sidebar {
+	background-color: var(--randimi-main-color);
+	border-top: 3px solid var(--randimi-background-shadow-color);
+	border-bottom: 3px solid var(--randimi-background-shadow-color);
+	height: 100%;
+	overflow-y: auto;
+	padding: 1rem 1rem;
+	width: 250px;
+}
+
+.randimi-sidebar > div {
+	display: flex;
+	flex-flow: column;
+}
+
+.randimi-sidebar-button {
+	background-color: var(--randimi-main-color);
+    border: 0 !important;
+	font-weight: 500;
+	text-align: start;
+	text-wrap: pretty;
+	transition: background-color .15s ease-in-out;
+	width: 100%;
+}
+
+.randimi-sidebar-button:focus {
+	background-color: initial;
+}
+
+.randimi-sidebar-button-selected {
+	opacity: var(--randimi-disabled-opacity);
+	pointer-events: none;
+}
+
+.randimi-sidebar-button-selected > .randimi-sidebar-button-label {
+	text-decoration: underline;
+}
+
+.randimi-sidebar-button:disabled {
+	opacity: var(--randimi-disabled-opacity);
+}
+
+.randimi-sidebar-button-icon {
+	margin-right: .1rem;
+}
+
+.randimi-sidebar-section {
+	margin-bottom: 1rem;
+}
+
+.randimi-sidebar-section > :not(:last-child) {
+	margin-bottom: 1rem;
+}
+
+.randimi-sidebar-section-header {
+	color: var(--randimi-highlight-text-color);
+	font-size: 20px;
+	overflow: hidden;
+	text-align: center;
+}
+
+.randimi-sidebar-section-header::before, .randimi-sidebar-section-header::after {
+    background-color: var(--randimi-highlight-text-color);
+    content: "";
+    display: inline-block;
+    height: 1px;
+	position: relative;
+    vertical-align: middle;
+    width: 50%;
+}
+
+.randimi-sidebar-section-header::before {
+    margin-left: -50%;
+    margin-right: 0.2em;
+}
+
+.randimi-sidebar-section-header::after {
+    margin-right: -50%;
+    margin-left: 0.2em;
+}
+
+.randimi-site-regex-select:hover {
+	text-decoration: none;
+}
+
+.randimi-status {
+	background-color: green;
+	border-radius: 100px;
+	color: white;
+	display: inline-block;
+	font-weight: 500;
+	min-width: fit-content;
+	padding: 0.2rem 0.7rem;
+	text-align: center;
+	text-wrap: nowrap;
+}
+
+.randimi-status-PRE_GENERATED,
+.randimi-status-RELEASED,
+.randimi-status-CREATED,
+.randimi-status-TESTING {
+	background-color: #0d3463;
+}
+
+.randimi-status-ACTIVE {
+	background-color: #008546;
+}
+
+.randimi-status-LOCKED,
+.randimi-status-ARCHIVED,
+.randimi-status-DELETED {
+	background-color: #838383;
+}
+
+/* Switch */
+.randimi-switch {
+    position: relative;
+    display: inline-block;
+    width: var(--randimi-switch-width);
+    height: var(--randimi-switch-height);
+	border-radius: var(--randimi-switch-height);
+}
+
+.randimi-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.randimi-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--randimi-background-shadow-color);
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: var(--randimi-switch-height);
+}
+
+.randimi-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: var(--randimi-switch-slider-diameter);
+    width: var(--randimi-switch-slider-diameter);
+    left: calc((var(--randimi-switch-height) - var(--randimi-switch-slider-diameter)) / 2);
+    bottom: calc((var(--randimi-switch-height) - var(--randimi-switch-slider-diameter)) / 2);
+    background-color: var(--randimi-color-background-input);
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .randimi-switch-slider {
+    background-color: var(--randimi-main-color);
+}
+
+input:checked + .randimi-switch-slider:before {
+    -webkit-transform: translateX(calc(var(--randimi-switch-width) - var(--randimi-switch-height)));
+    -ms-transform: translateX(calc(var(--randimi-switch-width) - var(--randimi-switch-height)));
+    transform: translateX(calc(var(--randimi-switch-width) - var(--randimi-switch-height)));
+}
+
+/* Tables */
+.randimi-table {
+	border: 2px solid var(--randimi-border-color) !important;
+	border-collapse: collapse !important;
+	border-radius: 3px;
+    text-align: start;
+    width: 100% !important;
+}
+
+.randimi-table > thead {
+	background-color: var(--randimi-background-shadow-color);
+	text-align: start;
+}
+
+.randimi-table > * > tr > th,
+.randimi-table > * > tr > td {
+	border-color: var(--randimi-border-color) !important;
+	border-bottom: 0 !important;
+	height: 2rem;
+	padding: 0.4rem 0.6rem !important;
+	vertical-align: middle;
+}
+
+.randimi-table > * > tr > td {
+	background-color: var(--randimi-color-background-input);
+}
+
+.randimi-table > * > tr > td:not(:last-child) {
+	border-right: 1px solid var(--randimi-border-color) !important;
+}
+
+.dt-scroll-body .randimi-table > * > tr > th {
+	padding-bottom: 0 !important;
+	padding-top: 0 !important;
+}
+
+.randimi-table > * > tr > th {
+	border-right: 1px solid var(--randimi-border-color) !important;
+}
+
+.randimi-table > * > tr {
+	border-bottom: 1px solid var(--randimi-border-color) !important;
+	border-collapse: collapse !important;
+}
+
+.dt-scroll-body .randimi-table,
+.dt-scroll-body .randimi-table > * > tr:last-child {
+	border-bottom: 0 !important;
+}
+
+tr.selected, tr.selected > td, .randimi-row-selected, .randimi-row-selected > td {
+	background-color: var(--randimi-highlight-color) !important;
+}
+
+.randimi-vertical-table {
+	border: var(--randimi-border-color) solid 1px;
+}
+
+.randimi-vertical-table th {
+	background-color: var(--randimi-color-background-input);
+	border: var(--randimi-border-color) solid 1px;
+	color: var(--randimi-main-text-color);
+	vertical-align: middle;
+}
+
+.randimi-vertical-table td {
+	background-color: var(--randimi-color-background-input);
+	border: var(--randimi-border-color) solid 1px;
+	color: var(--randimi-main-text-color);
+	overflow: auto;
+	vertical-align: middle;
+}
+
+.randimi-vertical-table ul {
+	margin: 0;
+	padding-inline-start: 0.75rem;
+}
+
+.randimi-vertical-table-inner td {
+	border: none;
+}
+
+.randimi-vertical-table-inner td:not(:last-child) {
+	border-right: var(--randimi-border-color) solid 1px;
+}
+
+.randimi-vertical-table-inner tr:not(:last-child) {
+	border-bottom: var(--randimi-border-color) solid 1px;
+}
+
+/* Class for selenium test. Declared for auto complete */
+.selenium-language-test {
+}
+
+/* Class for increasing the specificity by using not(.important) */
+.important {
+}
+
+:focus:not(:focus-visible):not(input, select, .multiselect) {
+    box-shadow: 0 0 0 0 !important;
+    outline: none;
+}
+
+:focus {
+    box-shadow: 0 0 0 .1rem var(--randimi-highlight-color) !important;
+    outline: none;
+}

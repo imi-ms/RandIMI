@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+	 * Thymeleaf fragment containing the common head of RandIMI.
+	 *
+	 * @param title (String) Title of the current page shown in the browser tab.
+	 * @param links (fragment) Links to CSS and JS Files. May be ~{}.
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+     */-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+	<!--/* Fragment that includes common styles and scripts */-->
+	<head th:fragment="common_head(title,links)">
+		<!--/* Use UTF-8 as encoding */-->
+		<meta charset="UTF-8"/>
+		<!--/* Title displayed in the browser tab and passed as fragment parameter. */-->
+		<title th:text="${title}">RandIMI</title>
+
+		<!-- Common styles and scripts -->
+		<script type="text/javascript" th:src="@{/webjars/jquery/jquery.min.js}"></script>
+		<script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+		<script type="text/javascript" th:src="@{/webjars/font-awesome/js/all.min.js}"></script>
+		<link rel="stylesheet" type="text/css" href="" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+		<link rel="stylesheet" type="text/css" href="" th:href="@{/webjars/font-awesome/css/all.min.css}"/>
+
+		<script type="text/javascript" th:src="@{/resources/js/randimi.js}"></script>
+
+		<!-- Customize the look and feel-->
+		<style th:inline="text"> :root {--randimi-main-color: [[${mainColor}]];}</style>
+		<style th:inline="text"> :root {--randimi-highlight-color: [[${highlightColor}]];}</style>
+		<style th:inline="text"> :root {--randimi-background-color: [[${backgroundColor}]];}</style>
+		<style th:inline="text"> :root {--randimi-main-text-color: [[${mainTextColor}]];}</style>
+		<style th:inline="text"> :root {--randimi-highlight-text-color: [[${highlightTextColor}]];}</style>
+		<link rel="stylesheet" type="text/css" href="" th:href="@{/resources/css/login.css}"/>
+		<link rel="stylesheet" type="text/css" href="" th:href="@{/resources/css/messages.css}"/>
+		<link rel="stylesheet" type="text/css" href="" th:href="@{/resources/css/randimi.css}"/>
+
+		<!-- Mobile settings (needed?) -->
+		<link rel="apple-touch-icon"      sizes="57x57"   href="" th:href="@{/resources/images/icon/apple-icon-57x57.png}"/>
+		<link rel="apple-touch-icon"      sizes="60x60"   href="" th:href="@{/resources/images/icon/apple-icon-60x60.png}"/>
+		<link rel="apple-touch-icon"      sizes="72x72"   href="" th:href="@{/resources/images/icon/apple-icon-72x72.png}"/>
+		<link rel="apple-touch-icon"      sizes="76x76"   href="" th:href="@{/resources/images/icon/apple-icon-76x76.png}"/>
+		<link rel="apple-touch-icon"      sizes="114x114" href="" th:href="@{/resources/images/icon/apple-icon-114x114.png}"/>
+		<link rel="apple-touch-icon"      sizes="120x120" href="" th:href="@{/resources/images/icon/apple-icon-120x120.png}"/>
+		<link rel="apple-touch-icon"      sizes="144x144" href="" th:href="@{/resources/images/icon/apple-icon-144x144.png}"/>
+		<link rel="apple-touch-icon"      sizes="152x152" href="" th:href="@{/resources/images/icon/apple-icon-152x152.png}"/>
+		<link rel="apple-touch-icon"      sizes="180x180" href="" th:href="@{/resources/images/icon/apple-icon-180x180.png}"/>
+		<link rel="icon" type="image/png" sizes="192x192" href="" th:href="@{/resources/images/icon/android-icon-192x192.png}"/>
+		<link rel="icon" type="image/png" sizes="32x32"   href="" th:href="@{/resources/images/icon/favicon-32x32.png}"/>
+		<link rel="icon" type="image/png" sizes="96x96"   href="" th:href="@{/resources/images/icon/favicon-96x96.png}"/>
+		<link rel="icon" type="image/png" sizes="16x16"   href="" th:href="@{/resources/images/icon/favicon-16x16.png}"/>
+		<link rel="manifest" href="" th:href="@{/resources/images/icon/manifest.json}"/>
+		<meta name="msapplication-TileColor" content="#ffffff"/>
+		<meta name="msapplication-TileImage" content="" th:content="@{/resources/images/icon/ms-icon-144x144.png}"/>
+		<meta name="theme-color"             content="#ffffff"/>
+
+		<meta property="og:description" content="A randomizaiton service for clinical studies">
+		<meta property="og:image" th:content="${baseUrl} + @{/resources/images/randimi_logo.png}">
+		<meta property="og:image:height" content="315">
+		<meta property="og:image:width" content="1000">
+		<meta property="og:locale" th:content="${#locale.toString()}">
+		<meta property="og:site_name" content="RandIMI">
+		<meta property="og:title" th:content="${title}">
+		<meta property="og:type" content="website">
+		<meta property="og:url" th:content="${url}">
+
+		<!--/* Per-page placeholder for additional styles or scripts */-->
+		<th:block th:replace="${links}" />
+	</head>
+	<body/><!--/* Empty body to have a valid HTML file. */-->
+</html>

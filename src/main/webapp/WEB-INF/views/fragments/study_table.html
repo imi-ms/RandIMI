@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<title>Study table fragment</title>
+</head>
+<body>
+
+<!--/*@thymesVar id="studies" type="java.util.List<de.unimuenster.imi.randimi.dto.study.StudyDTO>"*/-->
+<!--/*@thymesVar id="tableId" type="java.lang.String"*/-->
+<div th:fragment="studyTable(studies, tableId)" class="randimi-dataTables">
+
+	<table th:id="${tableId}" class="randimi-table">
+		<thead>
+		<tr>
+			<th id="studyNameColumn" style="min-width: 200px" th:text="#{studies.studyName}"
+			    class="selenium-language-test">Study Name
+			</th>
+			<th id="studyApiIdColumn" style="min-width: 100px" th:text="#{studies.studyApiId}"
+			    class="selenium-language-test">Study API ID
+			</th>
+			<th id="studyStatusColumn" style=" max-width: 170px; min-width: 170px; width: 170px !important;" th:text="#{studies.status}"
+			    class="selenium-language-test">Status
+			</th>
+			<th id="studyActivationDateColumn" style="min-width: 250px" th:text="#{studies.studyActivationDate}"
+			    class="selenium-language-test">
+			Activation Date
+			</th>
+			<!-- Hidden column for sorting the date column -->
+			<th>Activation Date</th>
+
+			<th:block th:if="${path} == '/studies/archived'">
+				<th id="studyRetentionPeriodColumn" style="min-width: 250px" th:text="#{studies.archiveStudy.retentionPeriod}"
+				    class="selenium-language-test">Retention Period
+				</th>
+				<!--/* Hidden column for sorting the date column */-->
+				<th>Retention Period</th>
+			</th:block>
+
+			<th id="studyActionsColumn" style="min-width: 170px" th:text="#{studies.studyActions}">Actions</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr th:each="study : ${studies}">
+			<td id="entryName" th:text="${study.guiName}">Substituting Student Associates with trained Sloths</td>
+			<td id="entryId" th:text="${study.apiId}">1</td>
+
+			<!--/* Status */-->
+			<td id="status" style="text-align: center; max-width: 170px; min-width: 170px; width: 170px !important;">
+				<span class="randimi-status" style="width: 130px;" th:classappend="'randimi-status-' + ${study.status}">
+					<span th:if="${study.isLocked()}" class="fas fa-lock" aria-hidden="true"></span>
+					<span th:text="#{'enum.StudyStatus.' + ${study.status}}"></span>
+				</span>
+			</td>
+
+
+			<!-- Activation date if/else. Only one of below will be displayed. -->
+			<th:block th:if="${study.isActive() || study.isLocked() || study.isArchived() || study.isDeleted()}">
+				<td th:text="${#dates.format(study.activationDate, '__#{datetime.format}__')}">19.05.2020</td>
+				<td th:text="${study.activationDate.getTime()}"></td>
+			</th:block>
+			<th:block th:unless="${study.isActive() || study.isLocked() || study.isArchived() || study.isDeleted()}">
+				<td th:text="#{studies.studyNotActivated}">Study is not activated yet!</td>
+				<td th:text="${maxLong}"></td>
+			</th:block>
+
+			<!--/* Retention Period */-->
+			<th:block th:if="${path} == '/studies/archived'"
+			          th:with="hasRetentionPeriod=${study.retentionPeriod != null}">
+				<th:block th:if="${hasRetentionPeriod}">
+					<td th:id="'retentionPeriod' + ${study.id}" th:text="${#dates.format(study.retentionPeriod.toInstant(), '__#{date.format}__')}">19.05.2020</td>
+					<td th:text="${study.activationDate.getTime()}"></td>
+				</th:block>
+				<th:block th:unless="${hasRetentionPeriod}">
+					<td th:text="#{studies.studyNoRetentionPeriod}">Study has no retention period !</td>
+					<td th:text="${maxLong}"></td>
+				</th:block>
+			</th:block>
+
+			<!-- Actions -->
+			<td>
+				<div class="randimi-column-action">
+
+					<!-- Show -->
+					<a th:href="@{/studies/view(id=${study.apiId})}"
+					   sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)">
+						<span class="fas fa-eye" aria-hidden="true" th:title="#{studies.view}"></span>
+					</a>
+					<a th:if="${study.isStatisticsAvailable()}"
+					   th:href="@{/studies/statistics(id=${study.apiId})}"
+					   sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_REPORT)">
+						<span class="fas fa-chart-line" th:title="#{studies.statistics}"></span>
+					</a>
+					<!-- Edit -->
+					<a th:unless="${study.isArchived() || study.isDeleted()}"
+					   th:href="@{/studies/edit(id=${study.apiId})}"
+					   sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)">
+						<span class="fas fa-pencil-alt" aria-hidden="true" th:title="#{studies.editStudy}"></span>
+					</a>
+					<!-- Edit Users -->
+					<a th:unless="${study.isDeleted()}" th:href="@{/studies/editUsers(id=${study.apiId})}"
+					   sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY_USERS)">
+						<span class="fas fa-user-tag" aria-hidden="true" th:title="#{studies.editUsers}"></span>
+					</a>
+
+					<th:block sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)">
+						<!-- Delete -->
+						<a th:if="${study.isCreated() || study.isInTestMode() || study.isArchived()}"
+						   data-bs-target="#confirmPopup" data-bs-toggle="modal" href=""
+						   th:attr="onclick=|updatePopUp(${study.id},'${study.guiName}')|">
+							<span class="fas fa-trash-alt" aria-hidden="true" th:title="#{studies.deleteStudy}"></span>
+						</a>
+						<!-- Test -->
+						<a th:if="${study.isInTestMode()}" th:href="@{/studies/test(id=${study.id})}">
+							<span class="fas fa-undo" aria-hidden="true" th:title="#{studies.test.reset}"></span>
+						</a>
+						<a th:if="${study.isCreated()}" th:href="@{/studies/test(id=${study.id})}">
+							<span class="far fa-play-circle" aria-hidden="true" th:title="#{studies.test}"></span>
+						</a>
+						<!-- activate -->
+						<a th:if="${study.isCreated() || study.isInTestMode()}"
+						   th:href="@{/studies/activate(id=${study.id})}">
+							<span class="fas fa-play" aria-hidden="true" th:title="#{studies.activate}"></span>
+						</a>
+						<!-- lock/unlock -->
+						<form th:if="${study.isActive() || study.isLocked()}" th:id="'lockForm' + ${study.getId()}"
+						      th:action="@{/studies/lock(id=${study.id})}" method="POST">
+							<input type="hidden" name="lock" th:value="${study.isActive()}">
+							<a href="#" th:onclick="|document.getElementById('lockForm' + ${study.getId()}).submit();|">
+								<span th:if="${study.isActive()}" class="fas fa-lock-open"
+								      aria-hidden="true" th:title="#{studies.lock}"></span>
+								<span th:unless="${study.isActive()}" class="fas fa-lock"
+								      aria-hidden="true" th:title="#{studies.unlock}"></span>
+							</a>
+						</form>
+						<!--/* archive */-->
+						<a th:if="${study.isActive() || study.isLocked() || study.isArchived()}" href=""
+						   data-bs-target="#archivePopup"
+						   data-bs-toggle="modal" th:attr="onclick=|updateArchivePopUp(${study.id})|">
+							<span class="fas fa-archive" aria-hidden="true"
+							      th:title="#{studies.archiveStudy.title}"></span>
+						</a>
+						<!--/* reactivate */-->
+						<a th:if="${study.isArchived()}" th:href="@{/studies/reactivate(id=${study.id})}">
+							<span class="fas fa-play" aria-hidden="true"
+							      th:title="#{studies.reactivateStudy.title}"></span>
+						</a>
+					</th:block>
+
+					<!-- add subjects -->
+					<a sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)"
+					   th:unless="${study.isCreated() || study.isDeleted()}"
+					   th:href="@{/studies/{studyId}/subject-lists(studyId = ${study.apiId})}">
+						<span th:if="${study.isLocked() || study.isArchived()}" class="fas fa-user" aria-hidden="true"
+						      th:title="#{subjects.view}"></span>
+						<span th:unless="${study.isLocked() || study.isArchived()}" class="fas fa-user-plus"
+						      aria-hidden="true" th:title="#{subjects.viewAdd}"></span>
+					</a>
+				</div>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+</div>
+
+</body>
+</html>

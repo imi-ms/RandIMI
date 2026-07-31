@@ -1,0 +1,896 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title=${study.getId() == 0} ? 'Randimi - ' + #{study.edit.new} : 'Randimi - ' + #{study.edit.edit},
+                                                           links=~{::head/th:block},
+                                                           header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+                                                           content=~{::#contentDiv},
+                                                           script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:if="${study.getId() == 0}" th:text="'Randimi - ' + #{study.edit.new}">Randimi - New Study</title>
+    <title th:unless="${study.getId() == 0}" th:text="'Randimi - ' + #{study.edit.edit}">Randimi - Edit Study</title>
+    <th:block>
+        <link rel="stylesheet" type="text/css" charset="utf8" href=""
+              th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+        <script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+        <link rel="stylesheet" type="text/css" charset="utf8" href=""
+              th:href="@{/webjars/datatables-select/css/select.dataTables.css}"/>
+        <script type="text/javascript" th:src="@{/webjars/datatables-select/js/dataTables.select.js}"></script>
+    </th:block>
+</head>
+<body>
+<header>
+    <h1 th:if="${study.getId() == 0}" th:text="#{study.edit.new}">New Study</h1>
+    <h1 th:unless="${study.getId() == 0}" th:text="#{study.edit.header(${study.guiName})}">Edit Study</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <th:block th:if="${changeReason != null}">
+        <div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='edit')}"></div>
+    </th:block>
+
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <th:block th:if="${study.getId() == 0}">
+            <!--/* Save Button */-->
+            <button type="submit" form="studyForm" class="btn btn-primary randimi-sidebar-button" value="saveAndGoBack"
+                    id="saveButton" name="action">
+                <span class="fas fa-save randimi-sidebar-button-icon"></span>
+                <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{button.save}"></span>
+            </button>
+            <!--/* Save and edit users Popup Button */-->
+            <button sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY_USERS)"
+                    type="submit" form="studyForm" class="btn btn-primary randimi-sidebar-button "
+                    value="saveAndEditUsers" id="saveButton2" name="action">
+                <span class="fas fa-save randimi-sidebar-button-icon"></span>
+                <span class="fas fa-user-tag randimi-sidebar-button-icon"></span>
+                <span class="randimi-sidebar-button-label selenium-language-text"
+                      th:text="#{study.edit.saveAndEditUsers}"></span>
+            </button>
+        </th:block>
+        <th:block th:unless="${study.getId() == 0}">
+            <!--/* Save Popup Button */-->
+            <button type="button" data-bs-target="#savePopup" data-bs-toggle="modal"
+                    class="btn btn-primary randimi-sidebar-button" id="savePopupButton"
+                    onclick="document.getElementById('confirmButton').value = 'saveAndGoBack'">
+                <span class="fas fa-save randimi-sidebar-button-icon"></span>
+                <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{button.save}"></span>
+            </button>
+            <!--/* Save and edit users Popup Button */-->
+            <button sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY_USERS)"
+                    type="button" data-bs-target="#savePopup" data-bs-toggle="modal"
+                    onclick="document.getElementById('confirmButton').value = 'saveAndEditUsers'"
+                    class="btn btn-primary randimi-sidebar-button" id="savePopupButton2">
+                <span class="fas fa-save randimi-sidebar-button-icon"></span>
+                <span class="fas fa-user-tag randimi-sidebar-button-icon"></span>
+                <span class="randimi-sidebar-button-label selenium-language-text"
+                      th:text="#{study.edit.saveAndEditUsers}"></span>
+            </button>
+        </th:block>
+
+        <!--/* Cancel Button */-->
+        <button th:replace="~{fragments/sidebar.html :: cancelButton(formName='studyForm')}"></button>
+    </div>
+</div>
+
+<div id="contentDiv">
+    <div id="siteFormTemplate" style="display: none;">
+        <div th:replace="~{:: siteForm(siteDTO=null, index=-1)}"></div>
+    </div>
+    <div id="studyArmFormTemplate" style="display: none;">
+        <div th:replace="~{:: studyArmForm(studyArmDTO=null, index=-1)}"></div>
+    </div>
+    <div id="enumeratedStratumFormTemplate" style="display: none;">
+        <div th:replace="~{:: enumeratedStratumForm(stratumDTO=null, index=-1)}"></div>
+    </div>
+    <div id="enumeratedStratumValueFormTemplate" style="display: none;">
+        <div th:replace="~{:: enumeratedStratumValueFrom(valueDTO=null, index=-1, valueIndex=-1)}"></div>
+    </div>
+    <form id="studyForm" method="POST" th:action="${changeReason != null} ? 'edit' : 'create'" th:object="${study}">
+        <div class="mb-3 studyForm">
+            <fieldset hidden>
+                <input type="hidden" th:field="*{id}"/>
+                <input type="hidden" th:field="*{originalApiId}"/>
+            </fieldset>
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.edit.general}, content=~{::#generalFieldsetDiv})}">
+                <div id="generalFieldsetDiv">
+
+                    <label class="required selenium-language-test" th:text="#{study.edit.identification}"></label>
+                    <div class="input-group mb-3">
+                        <!--/* Name */-->
+                        <span class="input-group-text required" th:text="#{study.edit.name}" id="bc">Name</span>
+                        <input id="guiName" type="text" th:field="*{guiName}" class="form-control"
+                               oninput="document.getElementById('apiIdAlt').value = this.value"/>
+
+                        <!--/* API ID */-->
+                        <span class="input-group-text required" th:text="#{study.edit.site.apiId}">API ID</span>
+                        <div class="input-group-text">
+                            <input type="checkbox" th:field="*{useApiId}" class="form-check-input"
+                                   oninput="toggleApiId(this, 'apiId'); toggleApiIdDisabled(this, 'generateApiId');">
+                            <span class="ms-1" th:text="#{study.edit.modify}">Modify API ID</span>
+                        </div>
+                        <input id="apiId" type="text" th:field="*{apiId}"
+                               class="form-control m-0" th:styleappend="*{useApiId} ? '' : 'display: none;'"/>
+                        <input id="apiIdAlt" type="text" th:value="*{guiName}" disabled="disabled"
+                               class="form-control m-0" th:styleappend="not *{useApiId} ? '' : 'display: none;'"/>
+
+                        <button id="generateApiId" type="button" onclick="generateApiId2()"
+                                class="btn btn-primary modify-on-click"
+                                th:disabled="not *{useApiId}" th:text="#{study.edit.generateApiId}">Generate
+                        </button>
+
+                        <!--/* Errors */-->
+                        <span th:replace="~{fragments/inputs.html :: inputError(fieldName='guiName', hasBinding=true)}"></span>
+                        <span th:replace="~{fragments/inputs.html :: inputError(fieldName='apiId', hasBinding=true)}"></span>
+                    </div>
+
+                    <div th:replace="~{fragments/inputs.html :: textArea(fieldName='description', label=#{study.edit.description}, rows=5)}"></div>
+                    <div th:replace="~{fragments/inputs.html :: numberInput(fieldName='capacity', label=#{study.edit.capacity}, toggleable='unmodifiableWhenNotStratifiedBySiteAndPreGenerated')}"></div>
+                    <div th:replace="~{fragments/inputs.html :: selectInput(disabled=${study.isActive()}, fieldName='randomizationAlgorithm', label=#{study.edit.algorithm}, onChange='toggleRandomizationAlgorithm()', options=${randomizationAlgorithmList})}"></div>
+
+                    <div id="parameters-BLOCKED" style="display: none;">
+                        <label for="minBlocksize" class="required" th:text="#{study.edit.blocksize}">Blocksize</label>
+                        <div class="input-group mb-3 blocksize">
+                            <span class="input-group-text required" th:text="#{study.edit.blocksize.min}">Min</span>
+                            <input id="minBlocksize" class="form-control unmodifiableWhenActive"
+                                   th:field="*{minBlocksize}" type="number"/>
+                            <span class="input-group-text required" th:text="#{study.edit.blocksize.max}">Max</span>
+                            <input id="maxBlocksize" class="form-control unmodifiableWhenActive"
+                                   th:field="*{maxBlocksize}" type="number"/>
+
+                            <span class="error" th:if="${#fields.hasErrors('minBlocksize')}"
+                                  th:errors="*{minBlocksize}">Min BlockSize Error</span>
+                            <span class="error" th:if="${#fields.hasErrors('maxBlocksize')}"
+                                  th:errors="*{maxBlocksize}">Max BlockSize Error</span>
+                        </div>
+                    </div>
+
+                    <div id="parameters-MINIMIZATION" style="display: none;">
+                        <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='minimizationParameter.forceRatio', label=#{study.edit.minimizationParameter.forceRatio}, toggleable='unmodifiableWhenActive')}"></div>
+                        <div th:replace="~{fragments/inputs.html :: numberInput(fieldName='minimizationParameter.imbalanceBias', label=#{study.edit.minimizationParameter.imbalanceBias}, step='0.1', toggleable='unmodifiableWhenActive')}"></div>
+                        <div th:replace="~{fragments/inputs.html :: selectInput(fieldName='minimizationParameter.imbalanceFunction', label=#{study.edit.minimizationParameter.imbalanceFunction}, options=${imbalanceFunctionList})}"></div>
+                    </div>
+
+                    <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='preGenerateSubjectList', label=#{study.edit.preGenerateSubjectList}, toggleable='unmodifiableWhenActive')}"></div>
+                    <div th:replace="~{fragments/inputs.html :: selectInput(fieldName='pseudonymHandling', options=${pseudonymHandlingList}, label=#{study.edit.pseudonymHandling})}"></div>
+                </div>
+            </fieldset>
+
+            <!--/* Site */-->
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.edit.sites}, content=~{::#siteFieldsetDiv})}">
+                <div id="siteFieldsetDiv">
+                    <span class="error" th:if="${#fields.hasErrors('sites')}" th:errors="*{sites}">Sites Error</span>
+                    <div>
+                        <button class="btn btn-primary addSiteButton modify-on-click" type="button" onclick="addSite()"
+                            th:text="#{study.edit.site.add}">Add Site
+                        </button>
+                    </div>
+                    <div id="siteForms">
+                        <th:block th:each="site,loop : ${study.getSites()}">
+                            <div th:replace="~{:: siteForm(siteDTO=${site}, index=${loop.index})}"></div>
+                        </th:block>
+                    </div>
+                    <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='stratifyBySite', label=#{study.edit.site.stratify}, toggleable='unmodifiableWhenMoreThanOneSite')}"></div>
+                </div>
+            </fieldset>
+
+            <!--/* Study arm */-->
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.edit.studyArms}, content=~{::#studyArmFieldsetDiv})}">
+                <div id="studyArmFieldsetDiv">
+                    <span id="studyArmsErrors" class="error" th:if="${#fields.hasErrors('studyArms')}"
+                          th:errors="*{studyArms}">Study Arms Error</span>
+                    <div>
+                        <button class="btn btn-primary addStudyArmButton disabledWhenActive mb-2 modify-on-click" type="button" onclick="addStudyArm()"
+                                th:text="#{study.edit.studyArm.add}">Add Study Arm
+                        </button>
+                    </div>
+                    <div id="studyArmForms">
+                        <th:block th:each="studyArm,loop : ${study.getStudyArms()}">
+                            <div th:replace="~{:: studyArmForm(studyArmDTO=${studyArm}, index=${loop.index})}"></div>
+                        </th:block>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!--/* Stratum */-->
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{study.edit.enumeratedStratums}, content=~{::#enumeratedStratumFieldsetDiv})}">
+                <div id="enumeratedStratumFieldsetDiv">
+                    <div>
+                        <button id="addEnumeratedStratumButton" class="btn btn-primary addEnumeratedStratumButton mb-2 disabledWhenActive modify-on-click"
+                            type="button" onclick="addEnumeratedStratum()" th:text="#{study.edit.addEnumeratedStratum}">
+                            Add Stratum
+                        </button>
+                    </div>
+                    <div id="enumeratedStratumForms">
+                        <th:block th:each="stratum,loop : ${study.getEnumeratedStratums()}">
+                            <div th:replace="~{:: enumeratedStratumForm(stratumDTO=${stratum}, index=${loop.index})}"></div>
+                        </th:block>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <!--/* Popup for change reason */-->
+        <th:block th:if="${changeReason != null}">
+            <div th:replace="~{fragments/change_reason.html :: changeReasonPopup(changeReasonKey='changeReason', reasonTypesKey='reasonTypes', popupTitleMessageCode='study.editUsers.savePopup.header')}">
+            </div>
+        </th:block>
+
+    </form>
+
+    <!--/* Popup for regex selection */-->
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId='pseudonymRegexPopup', popupTitleMessageCode='study.edit.site.selectPseudonymRegexTemplate', bodyContent=~{::#pseudonymRegexPopupBody}, footerContent=~{::#pseudonymRegexPopupFooter})}">
+        <div id="pseudonymRegexPopupBody" class="randimi-dataTables">
+            <table id="pseudonymRegexTable" class="randimi-table">
+                <thead>
+                    <tr>
+                        <th th:text="#{study.edit.regex.templateOrderNumber}"></th>
+                        <th th:text="#{study.edit.regex.templateName}"></th>
+                        <th th:text="#{study.edit.regex.templateRegex}"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="pseudonymRegexTemplate : ${pseudonymRegexList}"
+                        th:id="'template-' + ${pseudonymRegexTemplate.id}" style="vertical-align: baseline">
+                        <td th:text="${pseudonymRegexTemplate.orderNumber}"></td>
+                        <th:block th:each="pseudonymRegexDescription, iterPRD : ${pseudonymRegexTemplate.pseudonymRegexDescriptionDTOList}"
+                                  th:if="${#strings.equals(pseudonymRegexDescription.currentLanguage.tag, #locale.toString())}">
+                            <td th:text="${pseudonymRegexDescription.name}"></td>
+                        </th:block>
+                        <td th:text="${pseudonymRegexTemplate.regex}"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <span th:text="#{study.edit.regex.templateDescription} + ':'"></span>
+            <div id="pseudonymRegexTemplateDescription" class="border border-primary rounded p-1"
+                 style="overflow: auto; height: 10rem;">
+                <th:block th:each="pseudonymRegexTemplate : ${pseudonymRegexList}">
+                    <th:block th:each="pseudonymRegexDescription, iterPRD : ${pseudonymRegexTemplate.pseudonymRegexDescriptionDTOList}"
+                              th:if="${#strings.equals(pseudonymRegexDescription.currentLanguage.tag, #locale.toString())}">
+                        <span th:id="'template-' + ${pseudonymRegexTemplate.id} + '-description'" class="description"
+                            style="white-space: pre-line;" th:text="${pseudonymRegexDescription.description}">
+                        </span>
+                    </th:block>
+                </th:block>
+            </div>
+		</div>
+        <div id="pseudonymRegexPopupFooter">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel</button>
+            <button type="button" data-bs-dismiss="modal" class="btn btn-primary modify-on-click" onclick="usePseudonymTemplate()" th:text="#{button.select}">Add</button>
+        </div>
+	</div>
+</div>
+
+<!--/*@thymesVar id="siteDTO" type="de.unimuenster.imi.randimi.dto.study.SiteDTO"*/-->
+<div th:fragment="siteForm(siteDTO, index)" class="card m-2 mb-3 siteFormDiv">
+    <input type="hidden" class="form-control increaseIndex" th:id="sites[__${index}__].id" th:name="sites[__${index}__].id" th:value="${siteDTO == null ? 0 : siteDTO.id}"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="sites[__${index}__].orderNumber" th:name="sites[__${index}__].orderNumber" th:value="${siteDTO == null ? 0 : siteDTO.orderNumber}"/>
+    <input type="hidden" class="form-control present site-empty increaseIndex" th:id="sites[__${index}__].empty" th:name="sites[__${index}__].empty" th:value="${siteDTO == null ? true : siteDTO.empty}" value="false"/>
+    <div class="input-group m-1">
+
+        <!--/* Name */-->
+        <span class="input-group-text required" th:text="#{study.edit.name}">Name</span>
+        <input class="form-control site-name increaseIndex" th:id="sites[__${index}__].guiName"
+               th:name="sites[__${index}__].guiName" th:value="${siteDTO?.guiName}"
+               th:oninput="'document.getElementById(\'sites[' + __${index}__ + '].apiIdAlt\').value = this.value;'"
+               data-increase-index="id,name,oninput"/>
+
+        <!--/* API ID */-->
+        <span class="input-group-text required" th:text="#{study.edit.site.apiId}">API ID</span>
+
+        <div class="input-group-text">
+            <input type="checkbox" th:id="sites[__${index}__].useApiId" th:checked="${siteDTO?.useApiId}"
+                   th:name="sites[__${index}__].useApiId"
+                   th:oninput="'toggleApiId(this, \'sites[' + __${index}__ + '].apiId\');'"
+                   class="increaseIndex form-check-input" data-increase-index="id,name,oninput">
+            <span class="ms-1" th:text="#{study.edit.modify}">Modify API ID</span>
+        </div>
+
+        <input class="form-control m-0 site-api-id increaseIndex" th:id="sites[__${index}__].apiId"
+               th:name="sites[__${index}__].apiId" th:value="${siteDTO?.apiId}"
+               th:styleappend="${siteDTO?.useApiId} ? '' : 'display: none;'"/>
+        <input class="form-control m-0 site-api-id increaseIndex" th:id="sites[__${index}__].apiIdAlt"
+               th:value="${siteDTO?.guiName}" disabled="disabled"
+               th:styleappend="not ${siteDTO?.useApiId} ? '' : 'display: none;'"/>
+
+        <!--/* Remove Button */-->
+        <button th:if="${siteDTO == null} or ${siteDTO.empty}"
+                class="btn btn-primary removeSiteButton site-empty modify-on-click" type="button"
+                onclick="removeSite(this)" th:text="#{study.edit.site.remove}">Remove Site
+        </button>
+        <button th:unless="${siteDTO == null} or ${siteDTO.empty}"
+                class="btn btn-primary removeSiteButton site-not-empty modify-on-click" type="button"
+                onclick="removeSite(this)" th:text="#{study.edit.site.remove}">Remove Site
+        </button>
+
+        <!--/* Errors */-->
+        <span th:id="'sites' + ${index} + 'ErrorsName'" class="error"
+              th:if="${siteDTO != null} and ${#fields.hasErrors('sites[__${index}__].guiName')}"
+              th:errors="*{sites[__${index}__].guiName}">Site Error</span>
+        <span th:id="'sites' + ${index} + 'ErrorsApiId'" class="error"
+              th:if="${siteDTO != null} and ${#fields.hasErrors('sites[__${index}__].apiId')}"
+              th:errors="*{sites[__${index}__].apiId}">Site Error</span>
+    </div>
+    <div class="input-group m-1">
+        <!--/* Capacity */-->
+        <span class="input-group-text required" th:text="#{study.edit.site.capacity}">Capacity</span>
+        <input class="form-control site-capacity increaseIndex"
+               th:classappend="${siteDTO == null || siteDTO.id == 0} ? '' : 'unmodifiableWhenStratifiedBySiteAndPreGenerated'"
+               th:id="sites[__${index}__].capacity" th:name="sites[__${index}__].capacity"
+               th:value="${siteDTO?.capacity}" type="number"/>
+
+        <!--/* Seed */-->
+        <span class="input-group-text" th:text="#{study.edit.site.seed}">Seed</span>
+        <input th:if="${siteDTO == null || siteDTO.id == 0}" class="form-control site-seed increaseIndex" type="number"
+               th:id="sites[__${index}__].seed" th:name="sites[__${index}__].seed"/>
+        <input th:unless="${siteDTO == null || siteDTO.id == 0}" class="form-control site-seed unmodifiableWhenActive"
+               type="number" th:field="*{sites[__${index}__].seed}"/>
+
+        <!--/* Errors */-->
+        <span th:id="'sites' + ${index} + 'ErrorsCapacity'" class="error" th:if="${siteDTO != null} and ${#fields.hasErrors('sites[__${index}__].capacity')}" th:errors="*{sites[__${index}__].capacity}">Site Capacity Error</span>
+        <span th:id="'sites' + ${index} + 'ErrorsSeed'" class="error" th:if="${siteDTO != null} and ${#fields.hasErrors('sites[__${index}__].seed')}" th:errors="*{sites[__${index}__].seed}">Site Seed Error</span>
+    </div>
+    <div class="input-group m-1">
+        <!--/* Pseudonym Regex */-->
+        <span class="input-group-text" th:text="#{study.edit.site.pseudonymRegex}">Pseudonym Regex</span>
+        <input class="form-control site-regex increaseIndex" th:id="sites[__${index}__].pseudonymRegex" th:name="sites[__${index}__].pseudonymRegex" th:value="${siteDTO?.pseudonymRegex}"/>
+        <a class="btn btn-primary rounded-0 randimi-site-regex-select increaseIndex" data-bs-target="#pseudonymRegexPopup"
+           data-bs-toggle="modal" data-increase-index="onclick"
+           th:onclick="|updateSiteIndex('${index}')|"
+           th:text="#{study.edit.site.selectPseudonymRegexTemplate}">
+        </a>
+
+        <!--/* Pseudonym Regex test input */-->
+        <span class="input-group-text" th:text="#{study.edit.site.pseudonymRegexTestInput}">Test Input</span>
+        <div class="form-control rounded-start-0 randimi-regex-control">
+            <div style="display: flex;" class="form-control border-0 rounded-start-0 randimi-overlapping">
+                <span class="randimi-regex-highlight randimi-regex-highlight-decline randimi-decline-1"></span>
+                <span class="randimi-regex-highlight randimi-regex-highlight-accept randimi-accept"></span>
+                <span class="randimi-regex-highlight randimi-regex-highlight-decline randimi-decline-2"></span>
+            </div>
+            <input th:id="'sites' + ${index} + '.pseudonymRegexTestInput'" type="text"
+                   class="form-control border-0 rounded-0 randimi-overlapping randimi-regex-text randimi-ignore-changes site-regex-testInput increaseIndex"/>
+        </div>
+
+        <!--/* Errors */-->
+        <span th:id="'sites' + ${index} + 'ErrorsPseudonymRegex'" class="error" th:if="${siteDTO != null} and ${#fields.hasErrors('sites[__${index}__].pseudonymRegex')}" th:errors="*{sites[__${index}__].pseudonymRegex}">Site PseudonymRegex Error</span>
+    </div>
+</div>
+
+<div th:fragment="studyArmForm(studyArmDTO, index)" class="input-group mb-3 studyArmFormDiv">
+    <!--/* Hidden inputs */-->
+    <input type="hidden" class="form-control increaseIndex" th:id="studyArms[__${index}__].id" th:name="studyArms[__${index}__].id" th:value="${studyArmDTO != null} ? ${studyArmDTO.id} : 0"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="studyArms[__${index}__].studyId" th:name="studyArms[__${index}__].studyId" th:value="${studyArmDTO != null} ? ${studyArmDTO.studyId} : 0"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="studyArms[__${index}__].orderNumber" th:name="studyArms[__${index}__].orderNumber" th:value="${studyArmDTO != null} ? ${studyArmDTO.orderNumber} : 0"/>
+
+    <!--/* Name */-->
+    <span class="input-group-text required" th:text="#{study.edit.name}">Name</span>
+    <input type="text" class="form-control studyArm increaseIndex"
+           th:id="studyArms[__${index}__].guiName" th:name="studyArms[__${index}__].guiName"
+           th:value="${studyArmDTO?.guiName}"
+           th:oninput="'document.getElementById(\'studyArms[' + __${index}__ + '].apiIdAlt\').value = this.value;'"
+           data-increase-index="id,name,oninput"/>
+
+    <!--/* API ID */-->
+    <span class="input-group-text required" th:text="#{study.edit.site.apiId}">API ID</span>
+
+    <div class="input-group-text">
+        <input type="checkbox"
+               th:id="studyArms[__${index}__].useApiId" th:checked="${studyArmDTO?.useApiId}"
+               th:name="studyArms[__${index}__].useApiId"
+               th:oninput="'toggleApiId(this, \'studyArms[' + __${index}__ + '].apiId\');'"
+               class="increaseIndex form-check-input" value="on" data-increase-index="id,name,oninput">
+        <span class="ms-1" th:text="#{study.edit.modify}">Modify API ID</span>
+    </div>
+
+    <input class="form-control m-0 increaseIndex" th:id="studyArms[__${index}__].apiId"
+           th:name="studyArms[__${index}__].apiId" th:value="${studyArmDTO?.apiId}"
+           th:styleappend="${studyArmDTO?.useApiId} ? '' : 'display: none;'"/>
+    <input class="form-control m-0 increaseIndex" th:id="studyArms[__${index}__].apiIdAlt"
+           th:value="${studyArmDTO?.guiName}" disabled="disabled"
+           th:styleappend="not ${studyArmDTO?.useApiId} ? '' : 'display: none;'"/>
+
+    <!--/* Ratio */-->
+    <span class="input-group-text" th:text="#{study.edit.studyArm.ratio}">Ratio</span>
+    <input type="number" class="form-control unmodifiableWhenActive increaseIndex" th:id="studyArms[__${index}__].ratio"
+           th:name="studyArms[__${index}__].ratio" th:value="${studyArmDTO?.ratio}">
+
+    <button class="btn btn-primary removeStudyArmButton disabledWhenActive modify-on-click" type="button"
+            onclick="removeStudyArm(this)" th:text="#{study.edit.studyArm.remove}">Remove Study Arm
+    </button>
+
+    <!--/* Errors */-->
+    <span th:id="'studyArms' + ${index} + 'ErrorsGuiName'" class="error"
+          th:if="${studyArmDTO != null} and ${#fields.hasErrors('studyArms[__${index}__].guiName')}"
+          th:errors="*{studyArms[__${index}__].guiName}">Study Arm Name Error</span>
+    <span th:id="'studyArms' + ${index} + 'ErrorsApiId'" class="error"
+          th:if="${studyArmDTO != null} and ${#fields.hasErrors('studyArms[__${index}__].apiId')}"
+          th:errors="*{studyArms[__${index}__].apiId}">Study Arm Api Id Error</span>
+    <span th:id="'studyArms' + ${index} + 'ErrorsRatio'" class="error"
+          th:if="${studyArmDTO != null} and ${#fields.hasErrors('studyArms[__${index}__].ratio')}"
+          th:errors="*{studyArms[__${index}__].ratio}">Study Arm Ratio Error</span>
+</div>
+
+<div th:fragment="enumeratedStratumForm(stratumDTO, index)" class="card m-2 mb-3 enumeratedStratumFormDiv">
+    <input type="hidden" class="form-control increaseIndex" th:id="enumeratedStratums[__${index}__].id" th:name="enumeratedStratums[__${index}__].id" th:value="${stratumDTO == null ? 0 : stratumDTO.id}"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="enumeratedStratums[__${index}__].stratumType" th:name="enumeratedStratums[__${index}__].stratumType" value="ENUM"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="enumeratedStratums[__${index}__].studyId" th:name="enumeratedStratums[__${index}__].studyId" th:value="${stratumDTO == null ? 0 : stratumDTO.studyId}"/>
+    <input type="hidden" class="form-control increaseIndex" th:id="enumeratedStratums[__${index}__].orderNumber" th:name="enumeratedStratums[__${index}__].orderNumber" th:value="${stratumDTO == null ? 0 : stratumDTO.orderNumber}"/>
+
+    <span class="error" th:if="${stratumDTO != null} and ${#fields.hasErrors('enumeratedStratums[__${index}__].stratumParts')}"
+          th:errors="*{enumeratedStratums[__${index}__].stratumParts}">Enum Stratum Parts Error</span>
+    <div class="input-group mb-1">
+        <!--/* Name */-->
+        <span class="input-group-text required" th:text="#{study.edit.name}">Name</span>
+        <input class="form-control enumeratedStratumName increaseIndex"
+               th:id="enumeratedStratums[__${index}__].guiName" th:name="enumeratedStratums[__${index}__].guiName"
+               th:value="${stratumDTO?.guiName}"
+               th:oninput="'document.getElementById(\'enumeratedStratums[' + __${index}__ + '].apiIdAlt\').value = this.value;'"
+               data-increase-index="id,name,oninput"/>
+
+        <!--/* API ID */-->
+        <span class="input-group-text required" th:text="#{study.edit.site.apiId}">API ID</span>
+        <div class="input-group-text">
+            <input type="checkbox"
+                   th:id="enumeratedStratums[__${index}__].useApiId" th:checked="${stratumDTO?.useApiId}"
+                   th:name="enumeratedStratums[__${index}__].useApiId"
+                   th:oninput="'toggleApiId(this, \'enumeratedStratums[' + __${index}__ + '].apiId\');'"
+                   class="increaseIndex form-check-input" data-increase-index="id,name,oninput">
+            <span class="ms-1" th:text="#{study.edit.modify}">Modify API ID</span>
+        </div>
+
+        <input class="form-control m-0 increaseIndex" th:id="enumeratedStratums[__${index}__].apiId"
+               th:name="enumeratedStratums[__${index}__].apiId" th:value="${stratumDTO?.apiId}"
+               th:styleappend="${stratumDTO?.useApiId} ? '' : 'display: none;'"/>
+        <input class="form-control m-0 increaseIndex" th:id="enumeratedStratums[__${index}__].apiIdAlt"
+               th:value="${stratumDTO?.guiName}" disabled="disabled"
+               th:styleappend="not ${stratumDTO?.useApiId} ? '' : 'display: none;'"/>
+
+        <button class="btn btn-primary removeEnumeratedStratumButton disabledWhenActive modify-on-click" type="button"
+                onclick="removeEnumeratedStratum(this)" th:text="#{study.edit.stratum.remove}">
+            Remove Stratum
+        </button>
+
+        <span th:id="'enumeratedStratums' + ${index} + 'ErrorsName'" class="error"
+              th:if="${stratumDTO != null} and ${#fields.hasErrors('enumeratedStratums[__${index}__].guiName')}"
+              th:errors="*{enumeratedStratums[__${index}__].guiName}">Enum Stratum Name Error</span>
+        <span th:id="'enumeratedStratums' + ${index} + 'ErrorsApiId'" class="error"
+              th:if="${stratumDTO != null} and ${#fields.hasErrors('enumeratedStratums[__${index}__].apiId')}"
+              th:errors="*{enumeratedStratums[__${index}__].apiId}">Enum Stratum Api Id Error</span>
+    </div>
+    <div class="input-group mb-1" style="margin-left: 75px;">
+        <button class="btn btn-primary addEnumeratedStratumValueButton disabledWhenActive" type="button"
+            onclick="addEnumeratedStratumValue(this)" th:text="#{study.edit.stratum.addValue}">Add Value
+        </button>
+    </div>
+
+    <div class="valueForms">
+        <th:block th:if="${stratumDTO != null}">
+            <th:block th:each="stratumPart,valueLoop : ${stratum.getStratumParts()}">
+                <div th:replace="~{:: enumeratedStratumValueFrom(valueDTO=${stratumPart}, index=${index}, valueIndex=${valueLoop.index})}"></div>
+            </th:block>
+        </th:block>
+    </div>
+</div>
+
+<div th:fragment="enumeratedStratumValueFrom(valueDTO, index, valueIndex)" class="enumeratedStratumValueFormDiv">
+    <input type="hidden" class="form-control increaseIndex" th:id="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].id" th:name="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].id" th:value="${valueDTO != null} ? ${valueDTO.id} : 0"/>
+    <div class="input-group mb-1 enumeratedStratumValue" style="margin-left: 75px;">
+        <!--/* Name */-->
+        <span class="input-group-text required" th:text="#{study.edit.stratum.value}">Value</span>
+        <input class="form-control enumValue increaseIndex"
+               th:id="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].guiName"
+               th:name="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].guiName"
+               th:oninput="'document.getElementById(\'enumeratedStratums[' + __${index}__ + '].stratumParts[' + __${valueIndex}__ + '].apiIdAlt\').value = this.value;'"
+               th:value="${valueDTO?.guiName}" data-increase-index="id,name,oninput"/>
+
+        <!--/* API ID */-->
+        <span class="input-group-text required" th:text="#{study.edit.site.apiId}">API ID</span>
+        <div class="input-group-text">
+            <input type="checkbox"
+                   th:id="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].useApiId"
+                   th:name="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].useApiId"
+                   th:checked="${valueDTO?.useApiId}"
+                   th:oninput="'toggleApiId(this, \'enumeratedStratums[' + __${index}__ + '].stratumParts[' + __${valueIndex}__ + '].apiId\');'"
+                   class="increaseIndex form-check-input" data-increase-index="id,name,oninput">
+            <span class="ms-1" th:text="#{study.edit.modify}">Modify API ID</span>
+        </div>
+
+        <input class="form-control m-0 increaseIndex"
+               th:id="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].apiId"
+               th:name="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].apiId"
+               th:value="${valueDTO?.apiId}"
+               th:styleappend="${valueDTO?.useApiId} ? '' : 'display: none;'"/>
+        <input class="form-control m-0 increaseIndex"
+               th:id="enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].apiIdAlt"
+               th:value="${valueDTO?.guiName}" disabled="disabled"
+               th:styleappend="not ${valueDTO?.useApiId} ? '' : 'display: none;'"/>
+
+        <!--/* Remove button */-->
+        <button class="btn btn-primary removeEnumeratedStratumValueButton disabledWhenActive modify-on-click"
+                type="button" onclick="removeEnumeratedStratumValue(this)"
+                th:text="#{study.edit.stratum.removeValue}">Remove Value
+        </button>
+
+        <span th:id="'enumeratedStratums' + ${index} + 'StratumParts' + ${valueIndex} + 'ErrorsEnumValue'"
+            class="error"
+            th:if="${valueDTO != null} and ${#fields.hasErrors('enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].guiName')}"
+            th:errors="*{enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].guiName}">
+            Stratum Part Enum Item Fuck Me
+        </span>
+        <span th:id="'enumeratedStratums' + ${index} + 'StratumParts' + ${valueIndex} + 'ErrorsApiValue'"
+              class="error"
+              th:if="${valueDTO != null} and ${#fields.hasErrors('enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].apiId')}"
+              th:errors="*{enumeratedStratums[__${index}__].stratumParts[__${valueIndex}__].apiId}">Stratum Part Enum Api Id Error</span>
+    </div>
+</div>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+
+    let isStudyActive;
+    let pseudonymRegexTemplateSiteIndex;
+
+    $(document).ready(function () {
+
+        let studyIdZero = /*[[${study.getId() == 0}]]*/ true;
+        if (studyIdZero) {
+            $('#studySize').val('');
+        }
+
+        $('#pseudonymRegexPopup').on('shown.bs.modal', () => {
+            $('#pseudonymRegexTable').DataTable().columns.adjust().draw();
+        });
+
+        let index;
+        let testInput;
+        /*[# th:each="site, iterSite : ${study.getSites()}"]*/
+        index = /*[[${iterSite.index}]]*/ 0;
+        testInput = $('#sites' + index + '\\.pseudonymRegexTestInput');
+        randimi.addHighlightRegexTest(testInput);
+        /*[/]*/
+
+        // Enable or disable blocksize input
+        toggleRandomizationAlgorithm();
+
+        toggleSiteButtonVisibility();
+        toggleStudyArmButtons();
+
+        // Disable the remove value buttons of enumerated stratums if two or less values exists
+        const stratumValueForms = document.getElementsByClassName('enumeratedStratumFormDiv');
+        for (const stratumValueForm of stratumValueForms) {
+            toggleEnumeratedStratumValueButtons(stratumValueForm);
+        }
+
+        // Disable fields and remove buttons if study is already active
+        isStudyActive = /*[[${study.getActivationDate() != null}]]*/ false;
+        if (isStudyActive) {
+            // Disable inputs if study is active
+            $('.unmodifiableWhenActive').each(function () {
+                $(this).attr('readonly', 'readonly');
+            });
+
+            // Disable inputs if study is pre-generated
+            const isPreGenerate = document.getElementById("preGenerateSubjectList").checked;
+            if (isPreGenerate) {
+                const isStratifiedBySite = document.getElementById("stratifyBySite").checked;
+                if (isStratifiedBySite) {
+                    document.querySelectorAll(".unmodifiableWhenStratifiedBySiteAndPreGenerated").forEach((element) => {
+                        element.setAttribute("readonly", "readonly");
+                    });
+                } else {
+                    document.querySelectorAll(".unmodifiableWhenNotStratifiedBySiteAndPreGenerated").forEach((element) => {
+                        element.setAttribute("readonly", "readonly");
+                    });
+                }
+            }
+
+            // Disable buttons that should not be clickable
+            const buttons = document.getElementsByClassName("disabledWhenActive");
+            for (const button of buttons) {
+                button.disabled = true;
+            }
+
+            // Disable checkboxes
+            const numberSites = /*[[${study.sites.size()}]]*/ 0;
+            if (numberSites !== 1) {
+                randimi.disableCheckbox("stratifyBySite");
+            }
+
+            randimi.disableCheckbox("preGenerateSubjectList");
+            randimi.disableCheckbox("minimizationParameter.forceRatio");
+
+            // Show dummy select inputs, set their values and hide actual inputs
+            randimi.disableSelect("randomizationAlgorithm");
+            randimi.disableSelect("minimizationParameter.imbalanceFunction");
+        }
+
+        const pseudonymRegexTableOpts = {
+            columnDefs: [{orderable: false, targets: 2}],
+            order: [ [0, "asc"] ],
+            select: {
+                info: false,
+                style: 'single',
+                toggleable: false
+            }
+        };
+
+        randimi.setUpDatatable('pseudonymRegexTable', pseudonymRegexTableOpts, dataTable => {
+            dataTable.on('select', (event, table, type, indexes) => {
+               if (type === 'row') {
+                   $('.description').hide();
+                   $('#' + dataTable.row(indexes[0]).id() + '-description').show();
+               }
+            });
+        });
+
+        if (!studyIdZero) {
+            const hasErrors = /*[[${error != null and error != ''}]]*/ false;
+            randimi.preventUnloadAfterChange('studyForm', ['confirmButton', 'cancelButton'], hasErrors, ['modify-on-click']);
+        }
+    });
+
+    function usePseudonymTemplate() {
+        const selectedRow = $('#pseudonymRegexTable').DataTable().rows({selected: true}).data();
+        document.getElementById('sites[' + pseudonymRegexTemplateSiteIndex +'].pseudonymRegex').value = selectedRow[0][2];
+        randimi.highlightRegexTest($('#sites' + pseudonymRegexTemplateSiteIndex + '\\.pseudonymRegexTestInput'));
+    }
+
+    function updateSiteIndex(siteIndex) {
+        pseudonymRegexTemplateSiteIndex = siteIndex;
+        const regex = document.getElementById('sites[' + pseudonymRegexTemplateSiteIndex +'].pseudonymRegex').value;
+        const table = $('#pseudonymRegexTable').DataTable();
+        table.rows().deselect();
+        table.rows().every(rowIndex => {
+            const row = table.row(rowIndex);
+            if (row.data()[2] === regex) {
+                    row.select();
+            }
+        });
+    }
+
+    function toggleSiteButtonVisibility() {
+        for (const element of document.getElementsByClassName('site-empty')) {
+            element.disabled = false;
+        }
+        for (const element of document.getElementsByClassName('site-not-empty')) {
+            element.disabled = true;
+        }
+        if (document.getElementsByClassName('siteFormDiv').length <= 2) {
+            for (const element of document.getElementsByClassName('removeSiteButton')) {
+                element.disabled = true;
+            }
+        }
+    }
+
+    function toggleStudyArmButtons() {
+        const isDisabled = document.getElementsByClassName('studyArmFormDiv').length <= 3;
+        for (const element of document.getElementsByClassName('removeStudyArmButton')) {
+            element.disabled = isDisabled;
+        }
+    }
+
+    function toggleEnumeratedStratumValueButtons(stratumForm) {
+        const isDisabled = stratumForm.getElementsByClassName('enumeratedStratumValueFormDiv').length <= 2;
+        for (const element of stratumForm.getElementsByClassName('removeEnumeratedStratumValueButton')) {
+            element.disabled = isDisabled;
+        }
+    }
+
+    function setFormIndex(nodesToIncrease, index) {
+        for (const node of nodesToIncrease) {
+            let attributes = ['id', 'name'];
+            if (node.dataset['increaseIndex']) {
+                attributes = node.dataset['increaseIndex'].split(',');
+            }
+            for (const attribute of attributes) {
+                if (node[attribute]) {
+                    node.setAttribute(attribute, node.getAttribute(attribute).replace('-1', index));
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds a new site with incremented name/id.
+     */
+    function addSite() {
+        const siteFormTemplate = document.getElementById('siteFormTemplate').firstElementChild;
+        const siteForms = document.getElementById('siteForms');
+
+        const lastForm = siteForms.lastElementChild.firstElementChild
+        const index = getIdIndex(lastForm.id) + 1;
+
+        const newForm = siteFormTemplate.cloneNode(true);
+        const nodesToIncrease = newForm.querySelectorAll('.increaseIndex');
+        setFormIndex(nodesToIncrease, index);
+        siteForms.appendChild(newForm);
+
+        const testInput = $('#sites' + index + '\\.pseudonymRegexTestInput');
+        randimi.addHighlightRegexTest(testInput);
+
+        toggleSiteButtonVisibility();
+    }
+
+    /**
+     * Removes the triggered site.
+     * @param trigger Button that has been clicked
+     */
+    function removeSite(trigger) {
+        // Remove the triggered site input
+        trigger.closest(".siteFormDiv").remove();
+        // If there are less or equal than one site, hide the remove icon
+        toggleSiteButtonVisibility();
+    }
+
+    /**
+     * Adds a new study arm with incremented name/id.
+     */
+    function addStudyArm() {
+        const studyArmFormTemplate = document.getElementById('studyArmFormTemplate').firstElementChild;
+        const studyArmForms = document.getElementById('studyArmForms');
+
+        const lastForm = studyArmForms.lastElementChild.firstElementChild
+        const index = getIdIndex(lastForm.id) + 1;
+
+        const newForm = studyArmFormTemplate.cloneNode(true);
+        const nodesToIncrease = newForm.querySelectorAll('.increaseIndex');
+        setFormIndex(nodesToIncrease, index);
+
+        studyArmForms.appendChild(newForm);
+
+        toggleStudyArmButtons();
+    }
+
+    /**
+     * Removes the triggered study arm.
+     * @param trigger Button that has been clicked
+     */
+    function removeStudyArm(trigger) {
+        // Remove the triggered study arm input
+        trigger.closest(".studyArmFormDiv").remove();
+        toggleStudyArmButtons();
+    }
+
+    /**
+     * Adds a new enumerated stratum div with a new unused order number.
+     */
+    function addEnumeratedStratum() {
+        const stratumFormTemplate = document.getElementById('enumeratedStratumFormTemplate').firstElementChild;
+        const stratumForms = document.getElementById('enumeratedStratumForms');
+
+        let index;
+        if (stratumForms.lastElementChild) {
+            const lastForm = stratumForms.lastElementChild.firstElementChild;
+            index = getIdIndex(lastForm.id) + 1;
+        } else  {
+            index = 0;
+        }
+
+        const newForm = stratumFormTemplate.cloneNode(true);
+        const nodesToIncrease = newForm.querySelectorAll('.increaseIndex');
+        setFormIndex(nodesToIncrease, index);
+
+        stratumForms.appendChild(newForm);
+        addEnumeratedStratumValue(newForm);
+        addEnumeratedStratumValue(newForm);
+    }
+
+    /**
+     * Removes the enumerated stratum div of the trigger element.
+     *
+     * @param trigger Button that has been clicked
+     */
+    function removeEnumeratedStratum(trigger) {
+        trigger.closest(".enumeratedStratumFormDiv").remove();
+    }
+
+    /**
+     * Adds a new enumerated stratum value div to the triggered enumerated stratum div
+     * @param trigger Button that triggers this function.
+     */
+    function addEnumeratedStratumValue(trigger) {
+        const stratumForm = trigger.closest('.enumeratedStratumFormDiv');
+        const stratumIndex = getIdIndex(stratumForm.firstElementChild.id);
+
+        const stratumValueFormTemplate = document.getElementById('enumeratedStratumValueFormTemplate').firstElementChild;
+        const stratumValueForms = stratumForm.querySelector('.valueForms');
+
+        let index;
+        if (stratumValueForms.lastElementChild) {
+            const lastForm = stratumValueForms.lastElementChild.firstElementChild;
+            index = getIdIndex(lastForm.id) + 1;
+        } else  {
+            index = 0;
+        }
+
+        const newForm = stratumValueFormTemplate.cloneNode(true);
+        const nodesToIncrease = newForm.querySelectorAll('.increaseIndex');
+        setFormIndex(nodesToIncrease, stratumIndex);
+        setFormIndex(nodesToIncrease, index);
+
+        stratumValueForms.appendChild(newForm);
+        toggleEnumeratedStratumValueButtons(stratumForm);
+    }
+
+    /**
+     * Removes the enumerated stratum value div containing the given trigger.
+     * @param trigger Button that triggers this function.
+     */
+    function removeEnumeratedStratumValue(trigger) {
+        const stratumForm = trigger.closest('.enumeratedStratumFormDiv');
+        trigger.closest(".enumeratedStratumValueFormDiv").remove();
+        toggleEnumeratedStratumValueButtons(stratumForm);
+    }
+
+    /**
+     * Extracts the index of the id created by Thymeleaf loops.
+     *
+     * @param {string} id - Id containing the index.
+     * @returns {number} - The index as a number.
+     */
+    function getIdIndex(id) {
+    	return parseInt(id.match(/[0-9]+(?!.*[0-9])/)[0], 10);
+    }
+
+    /**
+     * Toggles the blocksize inputs, activates them if the BLOCKED algorithm is selected
+     */
+    function toggleRandomizationAlgorithm() {
+        const randomizationInput = document.getElementById('randomizationAlgorithm');
+        const pregenerateInput = document.getElementById('preGenerateSubjectList');
+
+        const parametersBlocked = document.getElementById('parameters-BLOCKED');
+        const parametersMinimization = document.getElementById('parameters-MINIMIZATION');
+
+        parametersBlocked.style.display = 'none';
+        parametersMinimization.style.display = 'none'
+
+        pregenerateInput.disabled = false;
+
+        if (randomizationInput.value === 'BLOCKED') {
+            parametersBlocked.style.display = '';
+
+        } else if (randomizationInput.value === 'MINIMIZATION') {
+            parametersMinimization.style.display = ''
+            pregenerateInput.disabled = true;
+            pregenerateInput.checked = false;
+        }
+    }
+
+    /**
+     * @param {HTMLInputElement} checkboxElement The checkbox that toggles the API ID.
+     * @param {string} inputId Id of the API ID input.
+     */
+    function toggleApiId(checkboxElement, inputId) {
+        document.getElementById(inputId).style.display = checkboxElement.checked ? "" : "none";
+        document.getElementById(inputId + 'Alt').style.display = !checkboxElement.checked ? "" : "none";
+    }
+
+    function toggleApiIdDisabled(checkboxElement, inputId) {
+        document.getElementById(inputId).disabled = !checkboxElement.checked;
+    }
+
+    /**
+     * Fetches a generated API ID from the backend.
+     * For some reason, when writing the code, the function has not been found without the "2" at the end.
+     */
+    function generateApiId2() {
+        fetch(randimiConstants.contextPath + "/studies/generateApiId")
+                .then(response => {
+                    return response.text()
+                })
+                .then(apiId => {
+                    document.getElementById("apiId").value = apiId;
+                });
+    }
+    /*]]>*/
+</script>
+</body>
+</html>

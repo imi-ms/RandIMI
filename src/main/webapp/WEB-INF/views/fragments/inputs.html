@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Input Fragments</title>
+</head>
+<body>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="placeholder" type="java.lang.String"*/-->
+<!--/*@thymesVar id="setValue" type="java.lang.Boolean"*/-->
+<div th:fragment="passwordInput(fieldName)"
+    th:with="hasBinding=${hasBinding} ?: true, label=${label} ?: '', placeholder=${placeholder} ?: '', setValue=${setValue} ?: false"
+    class="mb-3">
+    <label th:if="${label != ''}" th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+    <div class="input-group">
+        <input th:id="${fieldName}" type="password" th:name="${fieldName}" th:value="${setValue and hasBinding} ? *{__${fieldName}__} : ''" class="form-control"  autocomplete="off" autocorrect="off"
+               autocapitalize="off" spellcheck="false" th:placeholder="${placeholder}" th:classappend="${placeholder != ''} ? 'selenium-language-test'">
+        <div class="input-group-text" style="min-width: 50px;">
+            <a th:href="'javascript:randimi.togglePasswordVisibility(' + ${fieldName} + ')'"
+               th:title="#{general.label.showPassword}" tabindex="-1"
+               th:attr="data-bs-target=${fieldName}" style="margin: auto;">
+                <i th:id="'i-' + ${fieldName}" class="fa fa-eye-slash" aria-hidden="true"></i>
+            </a>
+        </div>
+    </div>
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="enableAuto" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="maxLength" type="java.lang.Integer"*/-->
+<!--/*@thymesVar id="placeholder" type="java.lang.String"*/-->
+<!--/*@thymesVar id="toggleable" type="java.lang.String"*/-->
+<div th:fragment="textInput(fieldName)"
+    th:with="enableAuto=${enableAuto} ?: 'on', hasBinding=${hasBinding} ?: true, label=${label} ?: '', maxLength=${maxLength} ?: '', placeholder=${placeholder} ?: '', toggleable=${toggleable} ?: ''"
+    class="mb-3">
+    <label th:if="${label != ''}" th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+    <input th:id="${fieldName}" type="text" th:name="${fieldName}" th:value="${hasBinding} ? *{__${fieldName}__} : ''"
+           class="form-control" th:maxlength="${maxLength}" th:placeholder="${placeholder}"
+           th:autocomplete="${enableAuto}" th:autocorrect="${enableAuto}" th:autocapitalize="${enableAuto}" th:spellcheck="${enableAuto == 'on'} ? true : false"
+           th:classappend="${(placeholder != '' ? 'selenium-language-test' : '') + toggleable}">
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="step" type="java.lang.String"*/-->
+<!--/*@thymesVar id="toggleable" type="java.lang.Boolean"*/-->
+<div th:fragment="numberInput(fieldName)"
+    th:with="hasBinding=${hasBinding} ?: true, label=${label} ?: '', step=${step} ?: '1', toggleable=${toggleable} ?: ''"
+    class="mb-3">
+    <label th:if="${label != ''}" th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+    <input th:id="${fieldName}" type="number" class="form-control" th:name="${fieldName}" th:value="${hasBinding} ? *{__${fieldName}__} : ''"
+           th:classappend="${toggleable}" th:step="${step}">
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="disabled" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="onChange" type="java.lang.String"*/-->
+<!--/*@thymesVar id="options" type="java.util.List<de.unimuenster.imi.randimi.model.SelectInputOption>"*/-->
+<div th:fragment="selectInput(fieldName, options)"
+    th:with="disabled=${disabled} ?: false, hasBinding=${hasBinding} ?: true, label=${label} ?: '', onChange=${onChange} ?: ''"
+    class="mb-3">
+    <label th:if="${label != ''}" th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+
+    <th:block th:if="${options instanceof T(java.util.Collection)} or ${options.getClass().isArray()}">
+        <select th:id="${fieldName} + 'Dummy'" class="form-control dummySelect" th:style="|display: ${disabled ? 'block' : 'none'}|" th:field="*{__${fieldName}__}" disabled="disabled">
+            <option th:each="option : ${options}" th:value="${option.getOptionValue()}" th:text="${option.lookupTranslation()} ? #{${option.getOptionName()}} : ${option.getOptionName()}"></option>
+        </select>
+        <select th:id="${fieldName}" class="form-control" th:style="|display: ${disabled ? 'none' : 'block'}|" th:field="*{__${fieldName}__}" th:attr="onchange=${onChange}">
+            <option th:each="option : ${options}" th:value="${option.getOptionValue()}" th:text="${option.lookupTranslation()} ? #{${option.getOptionName()}} : ${option.getOptionName()}"></option>
+        </select>
+    </th:block>
+    <th:block th:unless="${options instanceof T(java.util.Collection)} or ${options.getClass().isArray()}">
+        <select th:id="${fieldName}" class="form-control" th:name="${fieldName}" th:attr="onchange=${onChange}">
+            <option th:replace="${options}"></option>
+        </select>
+    </th:block>
+
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="isRequired" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="rows" type="java.lang.Integer"*/-->
+<div th:fragment="textArea(fieldName)"
+    th:with="hasBinding=${hasBinding} ?: true, isRequired=${isRequired} ?: false, label=${label} ?: '', rows=${rows} ?: 1"
+    class="mb-3">
+    <label th:if="${label != ''}" th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="selenium-language-test" th:text="${label}"
+           th:classappend="${isRequired} ? 'required' : ''"></label>
+    <textarea th:id="${fieldName}" th:name="${fieldName}" th:text="${hasBinding} ? *{__${fieldName}__} : ''" class="form-control" th:rows="${rows}"></textarea>
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<div th:fragment="colorInput(fieldName, label)">
+    <label th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+    <input th:id="${fieldName}" type="color"  th:field="*{__${fieldName}__}" class="form-control" />
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=true)}"></span>
+</div>
+
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/--><!--/* Name of the field used for the binding and the ID */-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/--><!--/* Label of the input element */-->
+<!--/*@thymesVar id="onChange" type="java.lang.String"*/--><!--/* Callback function for onchange events */-->
+<div th:fragment="dateInput(fieldName, label)" th:with="onChange=${onChange} ?: ''">
+    <label th:id="${fieldName} + 'Label'" th:for="${fieldName}" class="required selenium-language-test" th:text="${label}"></label>
+    <input th:id="${fieldName}" type="date"  th:field="*{__${fieldName}__}" th:attr="onchange=${onChange}" class="form-control" />
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=true)}"></span>
+</div>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/--><!--/* Name of the field in the form or DTO */-->
+<!--/*@thymesVar id="hasBinding" type="java.lang.Boolean"*/--><!--/* If the checkbox should be bound to a field */-->
+<!--/*@thymesVar id="helpText" type="java.lang.String"*/--><!--/* Text displayed as a question mark behind the label */-->
+<!--/*@thymesVar id="isChecked" type="java.lang.Boolean"*/--><!--/* If the checkbox should be checked initially if no binding is present */-->
+<!--/*@thymesVar id="isDisabled" type="java.lang.Boolean"*/--><!--/* If the checkbox should be disabled initially */-->
+<!--/*@thymesVar id="isGroup" type="java.lang.Boolean"*/--><!--/* If the checkbox is part of a group of checkboxes */-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/--><!--/* Label of the checkbox displayed right */-->
+<!--/*@thymesVar id="onChange" type="java.lang.String"*/--><!--/* Callback function for onchange events */-->
+<!--/*@thymesVar id="inputTitle" type="java.lang.String"*/--><!--/* Label displayed above the checkbox */-->
+<!--/*@thymesVar id="toggleable" type="java.lang.String"*/--><!--/* If not empty, a dummy checkbox will be created */-->
+<!--/*@thymesVar id="value" type="java.lang.String"*/--><!--/* HTML value of the checkbox element */-->
+<div th:fragment="checkboxInput(fieldName, label)"
+     th:with="hasBinding=${hasBinding} ?: true, helpText=${helpText} ?: '',
+              id=${value} ? ${fieldName} + '_' + ${value} : ${fieldName}, isChecked=${isChecked} ?: false,
+              isGroup=${isGroup} ?: false, onChange=${onChange} ?: '', inputTitle=${inputTitle} ?: '',
+              toggleable=${toggleable} ?: '', value=${value} ?: (${hasBinding} ? *{__${fieldName}__} : ''),
+              isDisabled=${isDisabled} ?: false"
+     class="form-check">
+    <label th:if="${inputTitle != ''}" class="selenium-language-test" th:text="${inputTitle}" style="margin-left: -1.25rem; margin-bottom: .4rem"></label>
+    <br th:if="${inputTitle != ''}">
+
+    <!--/* Dummy that is displayed if the checkbox is disabled */-->
+    <input th:if="${toggleable != ''}" th:id="${id} + 'Dummy'" type="checkbox" th:checked="${isChecked}" class="form-check-input dummyCheckbox" th:styleappend="${isDisabled} ? '' : 'display: none;'" disabled="disabled">
+    <!--/* Actual input */-->
+    <input th:if="${hasBinding}" th:id="${id}" type="checkbox" th:class="'form-check-input ' + ${fieldName} + 'Input'"
+           th:name="${fieldName}" th:value="${value}" th:field="*{__${fieldName}__}" th:attr="onchange=${onChange}" th:styleappend="${isDisabled} ? 'display: none;' : ''">
+    <input th:unless="${hasBinding}" th:id="${id}" type="checkbox"
+           th:class="'form-check-input ' + ${fieldName} + 'Input'" th:name="${fieldName}" th:value="${value}"
+           th:checked="${isChecked}" th:attr="onchange=${onChange}" th:classappend="${toggleable}" th:styleappend="${isDisabled} ? 'display: none;' : ''">
+
+    <label th:id="${fieldName} + 'Label'" th:for="${id}" class="selenium-language-test form-check-label" th:styleappend="${isGroup} ? '' : 'margin-bottom: .5rem;'" style="width: fit-content;">
+        <span th:id="${fieldName} + 'LabelText'" th:utext="${label}"></span>
+        <span th:id="${fieldName} + 'LabelText'" th:if="${helpText != ''}" class="fas fa-xs fa-question-circle" data-bs-toggle="tooltip" th:title="${helpText}"></span>
+    </label>
+    <span th:replace="~{:: inputError(fieldName=${fieldName}, hasBinding=${hasBinding})}"></span>
+</div>
+
+<!--/*@thymesVar id="fieldName" type="java.lang.String"*/-->
+<!--/*@thymesVar id="label" type="java.lang.String"*/-->
+<!--/*@thymesVar id="options" type="java.util.List<java.lang.String>"*/-->
+<!--/*@thymesVar id="labels" type="java.util.List<java.lang.String>"*/-->
+<!--/*@thymesVar id="imageUrlsl" type="java.util.List<java.lang.String>"*/-->
+<!--/*@thymesVar id="onChange" type="java.lang.String"*/-->
+<!--/* Fragment for a list of radiobuttons. The labels can be images, if a url list is provided. */-->
+<div th:fragment="radioInput(fieldName, label, options, labels)"
+	 th:with="onChange=${onChange} ?: '', imageUrls=${imageUrls} ?: ''"
+	 class="mb-3">
+	<label class="selenium-language-test" th:text="${label}">User Roles</label>
+	<div th:each="option, iterator : ${options}" class="form-check form-check-inline" th:with="id=${fieldName} + '_' + ${option}">
+		<input th:id="${id}" th:field="*{__${fieldName}__}" th:value="${option}" type="radio" class="form-check-input" th:attr="onchange=${onChange}" style="width: auto">
+		<label th:id="${id} + 'Label'" th:for="${id}" class="form-check-label selenium-language-test">
+			<span th:unless="${imageUrls}" th:text="${labels[__${iterator.index}__]}" th:remove="tag">label</span>
+			<img th:if="${imageUrls}" th:src="@{${imageUrls[__${iterator.index}__]}}" th:alt="${labels[__${iterator.index}__]}?:''" />
+		</label>
+    </div>
+</div>
+
+<span th:fragment="inputError(fieldName, hasBinding)" class="error form-text"
+      th:if="${hasBinding} and ${#fields.hasErrors(fieldName)}" th:errors="*{__${fieldName}__}"></span>
+
+<!--/*@thymesVar id="content" type="java.lang.String"*/-->
+<!--/*@thymesVar id="fieldsetClass" type="java.lang.String"*/-->
+<!--/*@thymesVar id="fieldsetId" type="java.lang.String"*/-->
+<!--/*@thymesVar id="legend" type="java.lang.String"*/-->
+<!--/*@thymesVar id="open" type="java.lang.Boolean"*/-->
+<fieldset th:fragment="fieldset(content, legend)"
+          th:with="fieldsetId=${fieldsetId} ?: '' , fieldsetClass=${fieldsetClass} ?: '', open=${open} ?: true"
+          th:id="${fieldsetId}" th:classappend="${fieldsetClass}" class="randimi-content-box">
+    <legend th:id="${fieldsetId} + 'Legend'" class="randimi-content-legend">
+        <span class="selenium-language-test" th:text="${legend}"></span>
+        <i class="fa fa-eye fa-xs" data-bs-toggle="tooltip" th:title="#{legend.tooltip.hide}" onclick="randimi.toggleFieldset(this.parentNode)" th:styleappend="${open} ? '' : 'display: none;'"></i>
+        <i class="fa fa-eye-slash fa-xs" data-bs-toggle="tooltip" th:title="#{legend.tooltip.show}" onclick="randimi.toggleFieldset(this.parentNode)" th:styleappend="${open} ? 'display: none;' : ''"></i>
+    </legend>
+    <th:block th:replace="${content}"/>
+</fieldset>
+
+</body>
+</html>

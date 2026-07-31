@@ -1,0 +1,23 @@
+# Maven files
+/.m2
+/target/
+/nbproject/
+/src/main/resources/hibernate-postgresql_productive.properties
+/src/main/resources/hibernate-postgresql_dev.properties
+
+# Local development files
+.env
+/data
+
+# eclipse project files
+.classpath
+.project
+.factorypath
+/.settings/
+/.vscode/
+
+.idea/
+.smarttomcat
+*.iml
+*/*.iml
+nb-configuration.xml

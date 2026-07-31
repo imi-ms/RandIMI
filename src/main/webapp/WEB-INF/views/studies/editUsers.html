@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{study.editUsers.title},
+                                                           links=~{::head/th:block},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'Randimi - ' + #{study.editUsers.title}">Randimi - Edit Study Permissions</title>
+    <th:block>
+        <script type="text/javascript" th:src="@{/resources/js/editUsers.js}"></script>
+        <link rel="stylesheet" type="text/css" charset="utf8" href=""
+              th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+        <script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+    </th:block>
+</head>
+<body>
+<header>
+    <h1 th:text="#{study.editUsers.header(${studyName})}">Edit Study User Rights</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='users')}"></div>
+
+
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Add User Button */-->
+        <button id="addUserPopupButton" type="button" class="btn btn-primary randimi-sidebar-button"
+                data-bs-target="#addUserPopup" data-bs-toggle="modal">
+            <span class="fas fa-user-plus randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.editUsers.addUser}"></span>
+        </button>
+
+        <!--/* Save Popup Button */-->
+        <button type="button" data-bs-target="#savePopup" data-bs-toggle="modal"
+                class="btn btn-primary randimi-sidebar-button" id="savePopupButton">
+            <span class="fas fa-save randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-test" th:text="#{button.save}"></span>
+        </button>
+
+        <!--/* Cancel Button */-->
+        <button th:replace="~{fragments/sidebar.html :: cancelButton(formName='editUsersForm')}"></button>
+    </div>
+
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.submenus}">Submenus</div>
+
+        <button id="usersButton" type="button" class="btn btn-primary randimi-sidebar-button" onclick="openUsers()">
+            <span class="fas fa-user randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label selenium-language-test" th:text="#{study.editUsers.users}"></span>
+        </button>
+        <button id="studyPermissionsButton" type="button" class="btn btn-primary randimi-sidebar-button"
+                onclick="openStudyPermissions()">
+            <span class="fas fa-tag randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label" th:text="#{study.editUsers.studyPermissions}"></span>
+        </button>
+        <button id="sitePermissionsButton" type="button" class="btn btn-primary randimi-sidebar-button"
+                onclick="openSitePermissions()">
+            <span class="fas fa-hospital randimi-sidebar-button-icon"></span>
+            <span class="randimi-sidebar-button-label" th:text="#{study.editUsers.sitePermissions}"></span>
+        </button>
+    </div>
+</div>
+
+<div id="contentDiv">
+    <form id="editUsersForm" method="POST" th:action="editUsers" th:object="${studyUsers}">
+        <fieldset hidden>
+            <input th:field="*{studyId}" type="hidden" class="form-control">
+            <input th:field="*{studyApiId}" type="hidden">
+            <input th:field="${removeStudyUserDTO.removedUserId}" type="hidden"/>
+            <th:block th:each="siteName : *{siteNames}">
+                <input type="hidden" class="form-control" th:field="*{siteNames[__${siteName.key}__]}"/>
+            </th:block>
+            <input th:field="*{modified}" type="hidden"/>
+
+            <button type="submit" class="invisible" value="editUsersRemove" id="removeButton"
+                    name="editUsersRemove">
+            </button>
+        </fieldset>
+            <div id="users" class="randimi-content-box randimi-dataTables">
+                <table id="userTable" class="randimi-table">
+                    <thead>
+                    <tr>
+                        <th style="min-width: 150px;" th:text="#{study.editUsers.userName}">User Name</th>
+                        <th style="min-width: 200px;" th:text="#{study.editUsers.fullName}">Full Name</th>
+                        <th style="min-width: 100px;" th:text="#{study.editUsers.action}">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                    <th:block th:each="studyUserDTO, loop : ${studyUsers.studyUserDTOs}">
+                        <tr th:id="'user-' + ${studyUserDTO.userId}">
+                            <td th:text="${studyUserDTO.username}">User Name</td>
+                            <td th:text="${studyUserDTO.userFirstName} + ' ' + ${studyUserDTO.userLastName}">Full Name</td>
+                            <td>
+                                <a id="removeAnchor" href="javascript:void(0);"
+                                   th:onclick="|submitRemove('${studyUserDTO.userId}')|">
+                                <span class="fas fa-ban" aria-hidden="true" th:title="#{study.editUsers.removeUser}"></span>
+                                </a>
+                            </td>
+                            <input type="hidden" class="form-control"
+                                   th:field="*{studyUserDTOs[__${loop.index}__].userId}"/>
+                            <input type="hidden" class="form-control"
+                                   th:field="*{studyUserDTOs[__${loop.index}__].username}"/>
+                            <input type="hidden" class="form-control"
+                                   th:field="*{studyUserDTOs[__${loop.index}__].userFirstName}"/>
+                            <input type="hidden" class="form-control"
+                                   th:field="*{studyUserDTOs[__${loop.index}__].userLastName}"/>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div id="studyPermissions" class="randimi-content-box randimi-dataTables" style="display: none">
+                <table id="studyPermissionsTable" class="randimi-table">
+                    <thead>
+                    <tr class="tableHeader">
+                        <th style="width:10%;" th:text="#{study.editUsers.userName}">User</th>
+                        <th style="width:10%" th:text="#{study.editUsers.fullName}">Name</th>
+                        <th style="text-align: center;"
+                            th:each="permissionBundle : ${studyPermissionBundleList}">
+                            <span th:text="#{${permissionBundle}}"></span>
+                            <span class="fas fa-xs fa-question-circle" data-bs-toggle="tooltip"
+                                  th:title="${#messages.msg('study.editUsers.tooltip.' + permissionBundle)}"></span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <th:block th:each="studyUser,userLoop : ${studyUsers.studyUserDTOs}">
+                        <tr>
+                            <td th:text="${studyUser.getUsername()}">
+                                tbrix
+                            </td>
+                            <td th:text="${studyUser.getUserLastName()} + ', ' + ${studyUser.getUserFirstName()}">
+                                Brix, Tobias
+                            </td>
+                            <td style="text-align: center;" th:each="permissionBundle : ${studyPermissionBundleList}">
+                                <input type="checkbox" class="form-check-input"
+                                       th:field="*{studyUserDTOs[__${userLoop.index}__].studyPermissionBundles}"
+                                       th:value="${permissionBundle}">
+                            </td>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div id="sitePermissions" style="display: none">
+                <div class="randimi-content-box randimi-dataTables" style="margin-bottom: var(--randimi-content-margin);">
+                    <table id="siteNamesTable" class="hover randimi-table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <td id="row-allSites" onclick="showSitePermissionsTable('allSites')"
+                                class="selenium-language-test"
+                                th:text="#{study.editUsers.allSites}">
+                            </td>
+                        </tr>
+                        </tfoot>
+                        <tbody>
+                        <th:block th:each="siteEntry : ${studyUsers.siteNames}">
+                            <tr th:id="'row-' + ${siteEntry.key}">
+                                <td th:onclick="|showSitePermissionsTable('${siteEntry.key}')|"
+                                    th:text="${siteEntry.value}">
+                                </td>
+                            </tr>
+                        </th:block>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="sitePermissionTables" class="randimi-content-box">
+
+                    <div id="allSitesDiv" class="randimi-dataTables">
+                        <h3 th:text="#{study.editUsers.allSites}" class="text-center"></h3>
+                        <table id="sitePermissionsTable-allSites" class="randimi-table">
+                            <thead>
+                            <tr class="tableHeader">
+                                <th class="selenium-language-test" style="width:10%;"
+                                    th:text="#{study.editUsers.userName}">User
+                                </th>
+                                <th class="selenium-language-test" style="width:10%"
+                                    th:text="#{study.editUsers.fullName}">Name
+                                </th>
+                                <th th:each="permissionBundle : ${sitePermissionBundleList}"
+                                    style="text-align: center;">
+                                    <span class="selenium-language-test" th:text="#{${permissionBundle}}"></span>
+                                    <span class="fas fa-xs fa-question-circle" data-toggle="tooltip"
+                                          th:title="${#messages.msg('study.editUsers.tooltip.' + permissionBundle)}"></span>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="studyUser,userLoop : ${studyUsers.studyUserDTOs}">
+                                <tr>
+                                    <td class="selenium-language-test" th:text="${studyUser.getUsername()}">
+                                        tbrix
+                                    </td>
+                                    <td class="selenium-language-test"
+                                        th:text="${studyUser.getUserLastName()} + ', ' + ${studyUser.getUserFirstName()}">
+                                        Brix, Tobias
+                                    </td>
+                                    <td th:each="permissionBundle : ${sitePermissionBundleList}"
+                                        style="text-align: center;">
+                                        <input type="checkbox" style="vertical-align: middle;" onclick="onAllSitePermissionsChange(this)"
+                                               th:field="*{studyUserDTOs[__${userLoop.index}__].allSitePermissionBundles}"
+                                               th:value="${permissionBundle}" class="form-check-input"
+                                               th:attr="data-user-s=${studyUser.userId}, data-permission=${permissionBundle}">
+
+                                        <button type="button" class="btn btn-primary selenium-language-test randimi-trigger-changes"
+                                                style="border-radius: 100px;"
+                                                th:onclick="|toggleAllSitePermissions(true, ${userLoop.index})|"
+                                                th:text="#{study.editUsers.allSites.check}"></button>
+                                        <button type="button" class="btn btn-primary selenium-language-test randimi-trigger-changes"
+                                                style="border-radius: 100px;"
+                                                th:onclick="|toggleAllSitePermissions(false, ${userLoop.index})|"
+                                                th:text="#{study.editUsers.allSites.uncheck}"></button>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <th:block th:each="siteEntry : ${studyUsers.siteNames}">
+                        <div th:id="${siteEntry.key} + 'Div'" class="randimi-dataTables">
+                            <h3 th:text="${siteEntry.value}" class="text-center"></h3>
+                            <table th:id="'sitePermissionsTable-' + ${siteEntry.key}" class="randimi-table">
+                                <thead>
+                                <tr class="tableHeader">
+                                    <th style="width:10%;" th:text="#{study.editUsers.userName}">User</th>
+                                    <th style="width:10%" th:text="#{study.editUsers.fullName}">Name</th>
+                                    <th th:each="permissionBundle : ${sitePermissionBundleList}"
+                                        style="text-align: center;">
+                                        <span th:text="#{${permissionBundle}}"></span>
+                                        <span class="fas fa-xs fa-question-circle" data-bs-toggle="tooltip"
+                                              th:title="${#messages.msg('study.editUsers.tooltip.' + permissionBundle)}"></span>
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <th:block th:each="studyUser,userLoop : ${studyUsers.studyUserDTOs}">
+                                    <tr>
+                                        <td th:text="${studyUser.getUsername()}">
+                                            tbrix
+                                        </td>
+                                        <td th:text="${studyUser.getUserLastName()} + ', ' + ${studyUser.getUserFirstName()}">
+                                            Brix, Tobias
+                                        </td>
+                                        <td th:each="permissionBundle : ${sitePermissionBundleList}"
+                                            style="display: flex; justify-content: center; align-items: center;">
+                                            <input type="checkbox" class="form-check-input"
+                                                   th:field="*{studyUserDTOs[__${userLoop.index}__].sitePermissionBundles[__${siteEntry.value}__]}"
+                                                   th:value="${permissionBundle}">
+                                            <span class="fas fa-exclamation-circle warn-message"style="margin-left: 0.2rem;"
+                                                  th:attr="data-user-t=${studyUser.userId}, data-permission=${permissionBundle}"
+                                                  data-toggle="tooltip" th:title="#{study.editUsers.tooltip.overwritten}">
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </th:block>
+                                </tbody>
+                            </table>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+
+        <!--/* Popup for change reason */-->
+        <div th:replace="~{fragments/change_reason.html :: changeReasonPopup(changeReasonKey='changeReason', reasonTypesKey='reasonTypes', popupTitleMessageCode='study.editUsers.savePopup.header')}">
+        </div>
+
+        <div th:replace="~{fragments/popup.html :: common_popup(popupId='addUserPopup', popupTitleMessageCode='study.editUsers.addUser', bodyContent=~{::#addUserPopupBody}, footerContent=~{::#addUserPopupFooter})}">
+            <div id="addUserPopupBody">
+                <table id="addUserTable" class="randimi-table">
+                    <thead>
+                    <tr>
+                        <th style="width: 10%"></th>
+                        <th style="width: 90%" th:text="#{study.editUsers.userName}"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="user : ${availableUsers}" style="vertical-align: baseline">
+                        <td>
+                            <input type="checkbox" th:field="${addStudyUsersDTO.newUserIds}"
+                                   th:value="${user.userId}" class="randimi-ignore-changes someOtherClass form-check-input"/>
+                        </td>
+                        <td>
+                            <label th:for="${#ids.prev('newUserIds')}" class="form-check-label" th:text="${user.username}"></label>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="addUserPopupFooter">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" value="editUsersAdd" id="addButton"
+                        name="editUsersAdd" th:text="#{button.add}">Add
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript" th:inline="javascript">
+    let activeSitePermissionsTableId;
+    let addUserDataTable = null;
+    let studyDataTable = null;
+    let siteNamesDataTable = null;
+    let sitePermissionsTables = {};
+    let userDataTable = null;
+
+    $(document).ready(async function () {
+        randimi.preventUnloadAfterChange('editUsersForm', ['addButton', 'cancelButton', 'confirmButton', 'removeButton'], $('#modified').val() === "true", ["randimi-trigger-changes"]);
+
+        $('#addUserPopup').on('shown.bs.modal', () => {
+            addUserDataTable.columns.adjust().draw();
+        });
+
+        const noUsersAvailableMessage = /*[[#{study.editUsers.noUsersAvailable}]]*/ "";
+        const noUsersInStudyMessage = /*[[#{study.editUsers.noUsers}]]*/ "";
+        const userTableOpts = {
+            columnDefs: [{orderable: false, targets: 2}],
+            language: {emptyTable: noUsersInStudyMessage},
+            order: [ [0, "asc"] ]
+        };
+        const addUserTableOpts = {
+            columnDefs: [{orderable: false, targets: 0}],
+            dom: "ft",
+            language: {emptyTable: noUsersAvailableMessage},
+            order: [ [1, "asc"] ],
+            paging: false,
+            scrollCollapse: true,
+            scrollY: "300px"
+        };
+
+        const studyPermissionsTableOpts = {
+            columnDefs: [{orderable: false, targets: []}],
+            language: {emptyTable: noUsersInStudyMessage},
+            order: [ [0, "asc"] ]
+        };
+        const numStudyPermissions = /*[[${studyPermissionBundleList.size()}]]*/ 0;
+        for (let i = 0; i < numStudyPermissions; ++i)
+            studyPermissionsTableOpts.columnDefs[0].targets.push(2 + i);
+
+        const sitePermissionsTableOpts = {
+            columnDefs: [{orderable: false, targets: []}],
+            language: {emptyTable: noUsersInStudyMessage},
+            order: [ [0, "asc"] ]
+        };
+        const numSitePermissions = /*[[${sitePermissionBundleList.size()}]]*/ 0;
+        for (let i = 0; i < numSitePermissions; ++i)
+            sitePermissionsTableOpts.columnDefs[0].targets.push(2 + i);
+
+        addUserDataTable = await randimi.setUpDatatable('addUserTable', addUserTableOpts);
+        userDataTable = await randimi.setUpDatatable('userTable', userTableOpts);
+        siteNamesDataTable = await randimi.setUpDatatable('siteNamesTable');
+        studyDataTable = await randimi.setUpDatatable('studyPermissionsTable', studyPermissionsTableOpts);
+        sitePermissionsTables['allSites'] = await randimi.setUpDatatable('sitePermissionsTable-allSites', sitePermissionsTableOpts);
+        activeSitePermissionsTableId = 'allSites'
+
+        let sitePermissionsTableId;
+        /*[# th:each="siteEntry : ${studyUsers.siteNames}"]*/
+        sitePermissionsTableId = /*[[${siteEntry.key}]]*/ "";
+        // activeSitePermissionsTableId ??= sitePermissionsTableId;
+        sitePermissionsTables[sitePermissionsTableId] = await randimi.setUpDatatable('sitePermissionsTable-' + sitePermissionsTableId, sitePermissionsTableOpts);
+        /*[/]*/
+
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		const tab = urlParams.get("tab");
+		if (tab) {
+            open(tab);
+		} else {
+            openUsers();
+		}
+
+        initAllSitePermissions();
+        updateInfoMessage();
+    });
+
+    function updateInfoMessage() {
+        if ($('#modified').val() === "true") {
+            $('#info-message-div').show();
+        } else {
+            $('#info-message-div').hide();
+        }
+    }
+
+    function openUsers() {
+        open('users');
+    }
+
+    function openStudyPermissions() {
+        open('studyPermissions');
+    }
+
+    function showActiveSitePermissionsTable() {
+        $('#sitePermissionTables').children().hide();
+        $('#' + activeSitePermissionsTableId + "Div").show();
+        sitePermissionsTables[activeSitePermissionsTableId].columns.adjust().draw();
+        document.getElementById('row-' + activeSitePermissionsTableId).classList.add('randimi-row-selected')
+    }
+
+    function showSitePermissionsTable(siteId) {
+        if (activeSitePermissionsTableId) {
+            document.getElementById('row-' + activeSitePermissionsTableId).classList.remove('randimi-row-selected')
+        }
+        activeSitePermissionsTableId = siteId;
+        showActiveSitePermissionsTable();
+    }
+
+    function openSitePermissions() {
+        open('sitePermissions');
+    }
+
+    function open(elementId) {
+        const tabNames = ["users", "sitePermissions", "studyPermissions"];
+        for (const tabName of tabNames) {
+            $('#' + tabName).hide();
+            const buttonId = tabName + "Button";
+            const buttonElement = document.getElementById(buttonId);
+            buttonElement.disabled = false;
+        }
+
+        const buttonElement = document.getElementById(elementId + 'Button');
+        buttonElement.disabled = true;
+
+        $('#' + elementId).show();
+
+		const url = new URL(window.location.href);
+		url.searchParams.set('tab', elementId);
+		window.history.replaceState(null, null, url);
+
+        if (elementId === 'users') {
+            userDataTable.columns.adjust().draw();
+        } else if (elementId === 'sitePermissions') {
+            siteNamesDataTable.columns.adjust().draw();
+            showActiveSitePermissionsTable();
+        } else if (elementId === "studyPermissions") {
+            studyDataTable.columns.adjust().draw();
+        }
+    }
+
+    /**
+     * Toggles all site permissions for the given user.
+     * @param check {boolean} If all permissions should be checked or unchecked.
+     * @param userIndex {number} Index of the user in the table.
+     */
+    function toggleAllSitePermissions(check, userIndex) {
+        const id = 'studyUserDTOs' + userIndex +'.sitePermissionBundles';
+        document.querySelectorAll("[id^='" + id + "']").forEach(element => {
+            element.checked = check;
+        });
+    }
+
+    function submitRemove(userId) {
+        $('#removedUserId').val(userId);
+        $('#removeButton').click();
+    }
+</script>
+</body>
+</html>

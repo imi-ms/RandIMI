@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{users.editRoles.editUserRoles},
+														   header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="'Randimi - ' + #{users.editRoles.editUserRoles}">Randimi - Edit User Roles</title>
+</head>
+<body>
+<header>
+    <h1 id="headline" class="selenium-language-test" th:text="#{users.editRoles.header(${user.getUsername()})}">Edit User Roles - Username</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+    <div class="randimi-sidebar-section">
+        <div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+        <!--/* Save Button */-->
+        <button th:replace="~{fragments/sidebar.html :: saveButton(formName='userRolesForm')}"></button>
+
+        <!--/* Cancel Button */-->
+        <button th:replace="~{fragments/sidebar.html :: cancelButton(formName='userRolesForm')}"></button>
+    </div>
+</div>
+
+<div id="contentDiv" sec:authorize="hasAnyRole('ROLE_ADMIN', 'ROLE_USER_MANAGER')">
+    <form id="userRolesForm" method="POST" th:action="editRoles" th:object="${user}">
+        <div class="mb-3 userForm">
+            <fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.editRoles.userRoles}, content=~{::#editUserDiv})}">
+                <div id="editUserDiv">
+                    <input id="id" type="hidden" class="form-control" th:field="*{id}" th:value="*{id}"/>
+
+                    <div id="apiAccess" sec:authorize="hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_API_USER)">
+                        <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=#{users.roles.API_USER}, label=#{'enum.UserRoles.' + ${apiRole}}, inputTitle=#{users.invite.apiAccess}, value=${apiRole})}"></div>
+                    </div>
+
+                    <div id="userRolesDiv" class="mb-3">
+                    	<label for="userRoles" class="selenium-language-test" th:text="#{users.edit.userRoles}">User Roles</label>
+
+                        <th:block th:each="userRole : ${userRoles}">
+                            <th:block th:if="${userRole.textValue == 'ROLE_ADMIN'}" sec:authorize="hasAnyRole('ROLE_ADMIN')">
+                                <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=${#messages.msg('users.roles.' + userRole)}, isGroup=${true}, label=#{'enum.UserRoles.' + ${userRole}}, value=${userRole})}"></div>
+                            </th:block>
+                            <th:block th:unless="${userRole.textValue == 'ROLE_ADMIN'}">
+                                <div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='userRoles', helpText=${#messages.msg('users.roles.' + userRole)}, isGroup=${true}, label=#{'enum.UserRoles.' + ${userRole}}, value=${userRole})}"></div>
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </form>
+</div>
+<script type="text/javascript" th:inline="javascript">
+    initPage();
+
+    function initPage() {
+        const hasErrors = /*[[${error != null and error != ''}]]*/ false;
+        randimi.preventUnloadAfterChange('userRolesForm', ['saveButton', 'cancelButton'], hasErrors);
+    }
+</script>
+</body>
+</html>

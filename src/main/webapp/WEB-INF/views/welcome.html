@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * Welcome page of RandIMI showing the login or a welcome message
+	 *
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='RandIMI', header=~{}, content=~{::#contentDiv}, script=~{})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+	<head>
+		<title>RandIMI</title>
+	</head>
+	<body>
+		<div id="contentDiv" class="randimi-content-box" style="height: 100%; display: flex;">
+			<!--/* Show login if not logged in yet */-->
+			<div sec:authorize="!isAuthenticated()" th:replace="~{fragments/login :: login_dialog}"></div>
+			<!--/* Show welcome otherwise*/-->
+			<!-- <div sec:authorize="isAuthenticated()" id="contentDiv" style="margin:auto; text-align:center; position:relative;top:120px;padding-bottom:5rem;"> -->
+			<div sec:authorize="isAuthenticated()" id="welcome" class="login-welcome">
+				<!--/* Logo of RandIMI */-->
+				<img id="logoMainPage" th:src="@{/resources/images/randimi_logo.png}" class="randimi-logo">
+			</div>
+		</div>
+	</body>
+</html>

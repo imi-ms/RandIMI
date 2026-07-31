@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * @author Daniel Preciado-Marquez
+     */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{subjects.view.title},
+                                                           links=~{::head/th:block},
+                                                           header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+                                                           content=~{::#contentDiv},
+                                                           script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<title th:text="'Randimi - ' + #{subjects.view.title}">Randimi - Show Subjects</title>
+	<th:block>
+		<link rel="stylesheet" type="text/css" charset="utf8" href=""
+		      th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+		<script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+	</th:block>
+</head>
+<body>
+<header>
+	<h1 th:text="#{subjects.view.headline(${study.guiName})}">Show Subjects</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='subjects')}"></div>
+
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+		<!-- Add Subject button -->
+		<a th:if="${study.isActive() || study.isInTestMode()}"
+		   th:href="@{/subjects/add(id=${study.getId()},subjectListId=${subjectList.id})}"
+		   class="btn btn-primary randimi-sidebar-button">
+			<span class="fas fa-user-plus randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-test" th:text="#{subjects.view.add}"></span>
+		</a>
+
+		<!-- Download button-->
+		<a data-bs-target="#exportPopup" data-bs-toggle="modal" href="" class="btn btn-primary randimi-sidebar-button">
+			<span class="fas fa-cloud-download-alt randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{subjects.view.downloadSubjectList}"></span>
+		</a>
+
+		<!-- Back-button to studies page -->
+		<div th:replace="~{fragments/sidebar.html :: backButton(action=@{/studies/{studyId}/subject-lists(studyId = ${study.apiId})})}"></div>
+	</div>
+</div>
+
+<!--/* Content of the current study */-->
+<div id="contentDiv" class="randimi-content-box randimi-dataTables">
+	<!-- Subjects of the study -->
+	<table id="subjectListTable" class="randimi-table">
+		<!-- Header if stratified -->
+		<thead>
+		<tr>
+			<th th:text="#{subjects.view.index}" style="width: 10%;">Index</th>
+			<th th:text="#{subjects.view.studyArm}" style="width: 15%;">Study Arm</th>
+			<th th:text="#{subjects.view.pseudonym}" style="width: 15%;">Pseudonym</th>
+			<th th:text="#{subjects.view.location}" style="width: 15%;">Location</th>
+			<th th:text="#{subjects.view.randomizationTimestamp}" style="width: 15%;">Randomization Timestamp</th>
+			<th th:text="#{subjects.view.status}">Status</th>
+			<th th:text="#{subjects.view.actions}" style="width: 10%;">Actions</th>
+			<!--/* Hidden columns */-->
+			<th class="d-none"></th>
+			<th class="d-none"></th>
+		</tr>
+		</thead>
+		<tbody>
+		<!-- Each entry, only sho study arm name, if already assigned -->
+		<th:block th:each="randomizationEntry : ${subjectList.getSubjectEntries()}">
+			<tr>
+				<td th:style="${(randomizationEntry.getStatus() != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).ACTIVE) ? 'text-decoration: line-through;' : ''}"
+				    th:text="${randomizationEntry.getOrderNumber()}">Order Number
+				</td>
+				<td th:style="${(randomizationEntry.getStatus() != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).ACTIVE) ? 'text-decoration: line-through;' : ''}">
+					<span th:if="${randomizationEntry.pseudonym != ''}"
+					      th:text="${randomizationEntry.getStudyArmName()}">
+					</span>
+				</td>
+				<td th:style="${(randomizationEntry.getStatus() != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).ACTIVE) ? 'text-decoration: line-through;' : ''}"
+				    th:text="${randomizationEntry.getPseudonym()}">Pseudonym
+				</td>
+				<td th:style="${(randomizationEntry.getStatus() != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).ACTIVE) ? 'text-decoration: line-through;' : ''}"
+				    th:text="${randomizationEntry.getLocation()}">Location
+				</td>
+				<td th:style="${(randomizationEntry.getStatus() != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).ACTIVE) ? 'text-decoration: line-through;' : ''}"
+				    th:text="${#dates.format(randomizationEntry.getRandomizationTimestamp(), '__#{datetime.format}__')}">Randomization Timestamp
+				</td>
+				<td id="status" style="text-align: center;">
+					<span class="randimi-status" style="width: 250px;" th:classappend="'randimi-status-' + ${randomizationEntry.status}">
+						<span th:if="${study.isLocked()}" class="fas fa-lock" aria-hidden="true"></span>
+						<span th:text="#{'enum.SubjectStatus.' + ${randomizationEntry.status}}"></span>
+					</span>
+				</td>
+				<td>
+					<div class="randimi-column-action">
+						<!-- Show -->
+						<!--/*
+						<span sec:authorize="hasRole('ROLE_ADMIN')
+							  or hasPermission(#vars.study, 'READ_SUBJECT')
+							  or hasPermission(#vars.randomizationEntry.getSiteId(), 'study.model.de.unimuenster.imi.randimi.Site', 'READ_SUBJECT')">
+							<a th:href="@{/subjects/show(studyId=${study.id}, subjectId=${randomizationEntry.getId()}, siteId=${randomizationEntry.getSiteId()})}">
+								<span class="fas fa-eye" aria-hidden="true" th:title="#{subjects.view.showSubject}"></span>
+							</a>
+						</span>
+						*/-->
+						<!-- Delete -->
+						<span sec:authorize="@customPermissionEvaluator.hasPermissionSubjectList(#authentication, #vars.subjectList.id, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).DELETE_SUBJECT)"
+						      th:unless="${randomizationEntry.getStatus() == T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).RELEASED || study.isLocked() || study.isArchived()}">
+							<a data-bs-target="#confirmPopup" data-bs-toggle="modal" href=""
+								   th:attr="onclick=|updatePopUp(${randomizationEntry.getId()}, '${randomizationEntry.getPseudonym()}', '${randomizationEntry.getStatus().toString()}', ${randomizationEntry.getSiteId()})|">
+									<span class="fas fa-user-slash" aria-hidden="true"
+									      th:title="#{subjects.view.deleteSubject.title}"
+									      title="Delete Subject">
+									</span>
+								</a>
+						</span>
+						<!-- Edit Pseudonym -->
+						<span sec:authorize="@customPermissionEvaluator.hasPermissionSubjectList(#authentication, #vars.subjectList.id, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_SUBJECT)"
+						      th:unless="${study.isLocked() || study.isArchived()}">
+							<a data-bs-target="#editPseudonymPopup" data-bs-toggle="modal" href=""
+							   th:attr="onclick=|updatePseudonymPopUp(${randomizationEntry.getId()}, '${randomizationEntry.getPseudonym()}')|">
+								<span class="fas fa-pen-to-square" aria-hidden="true"
+								      th:title="#{subjects.view.editPseudonym.title}" title="Edit Pseudonym">
+								</span>
+							</a>
+						</span>
+						<!--/* Show Details */-->
+						<span>
+							<a data-bs-target="#detailsPopup" data-bs-toggle="modal" href=""
+							   onclick="updateDetailsPopup(this)">
+								<span class="fas fa-info" th:title="#{subjects.view.showDetails}"></span>
+							</a>
+						</span>
+					</div>
+				</td>
+				<!--/* Hidden columns */-->
+				<td class="d-none" th:text="${#dates.format(randomizationEntry.getDeletionTimestamp(), '__#{datetime.format}__')}">
+				<td class="d-none" th:text="${#dates.format(randomizationEntry.getReleaseTimestamp(), '__#{datetime.format}__')}">
+			</tr>
+		</th:block>
+		</tbody>
+	</table>
+	<form method="POST" th:action="@{/subjects/remove}" th:object="${deleteSubjectDTO}">
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='confirmPopup', popupTitleMessageCode='subjects.view.deleteSubject.title', bodyContent=~{::#deleteSubjectPopupBody}, footerContent=~{::#deleteSubjectPopupFooter})}">
+			<div id="deleteSubjectPopupBody">
+				<div class="mb-3">
+					<span id="popup-text"></span>
+				</div>
+
+				<div class="mb-3">
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='release', label=#{subjects.view.changeReason.release}, toggleable='allowRelease')}">
+					</div>
+				</div>
+
+                <div th:replace="~{fragments/change_reason.html :: changeReason(reasonTypesKey='reasonTypes', changeReasonKey='deleteSubjectDTO.changeReason')}">
+                </div>
+
+				<input id="subjectListId" type="hidden" class="form-control" th:field="*{subjectListId}" />
+				<input id="subjectId" type="hidden" class="form-control" th:field="*{subjectId}" />
+				<input id="siteId" type="hidden" class="form-control" th:field="*{siteId}" />
+				<input type="hidden" class="form-control" th:field="*{studyId}" />
+				<input type="hidden" th:field="*{studyApiId}" />
+			</div>
+			<div id="deleteSubjectPopupFooter">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel</button>
+                <button type="submit" class="btn btn-primary" value="save" id="saveButton" name="action" th:text="#{button.save}">Save</button>
+			</div>
+		</div>
+	</form>
+
+	<!--/* Edit Pseudonym popup */-->
+	<form method="POST" th:action="@{/subjects/edit-pseudonym}" th:object="${editSubjectPseudonymDTO}">
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='editPseudonymPopup', popupTitleMessageCode='subjects.view.editPseudonym.title', bodyContent=~{::#editPseudonymPopupBody}, footerContent=~{::#editPseudonymPopupFooter})}">
+			<div id="editPseudonymPopupBody">
+				<div class="mb-3">
+					<span id="editPseudonymPopupText"></span>
+				</div>
+
+				<div th:replace="~{fragments/inputs.html :: textInput(fieldName='pseudonym', label=#{subjects.view.pseudonym}, maxLength='255')}">
+				</div>
+
+				<div th:replace="~{fragments/change_reason.html :: changeReason(changeReasonKey='editSubjectPseudonymDTO.changeReason', reasonTypesKey='editPseudonymReasonTypes')}">
+				</div>
+
+				<input id="editSubjectListId" type="hidden" th:field="*{subjectListId}" />
+				<input id="editSubjectId" type="hidden" th:field="*{subjectId}" />
+				<input id="editStudyId" type="hidden" th:field="*{studyId}" />
+				<input id="editStudyApiId" type="hidden" th:field="*{studyApiId}" />
+			</div>
+			<div id="editPseudonymPopupFooter">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.cancel}">Cancel</button>
+				<button type="submit" class="btn btn-primary" value="save" id="editPseudonymSaveButton" name="action" th:text="#{button.save}">Save</button>
+			</div>
+		</div>
+	</form>
+
+	<!--/* Export popup */-->
+	<form method="GET" th:action="@{/studies/{studyId}/subject-lists/{subjectListId}/download(studyId=${study.apiId}, subjectListId=${subjectList.id})}">
+		<div th:replace="~{fragments/subject-export-popup.html :: subject_export_popup(popupId='exportPopup', study=${study}, subjectList=${subjectList})}">
+		</div>
+	</form>
+
+	<!--/* Details popup */-->
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId='detailsPopup', popupTitleMessageCode='subjects.view.showDetails.title', bodyContent=~{::#showDetailsPopupBody}, footerContent=~{::#showDetailsPopupFooter})}">
+		<div id="showDetailsPopupBody">
+			<table id="auditEntriesTable" class="randimi-vertical-table w-100">
+				<tr>
+					<th th:text="#{subjects.view.index}"></th>
+					<td id="subjectDetailsIndex"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.pseudonym}"></th>
+					<td id="subjectDetailsPseudonym"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.location}"></th>
+					<td id="subjectDetailsLocation"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.studyArm}"></th>
+					<td id="subjectDetailsStudyArm"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.status}"></th>
+					<td id="subjectDetailsStatus"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.randomizationTimestamp}"></th>
+					<td id="subjectDetailsRandomizationTimestamp"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.deletionTimestamp}"></th>
+					<td id="subjectDetailsDeletionTimestamp"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.releaseTimestamp}"></th>
+					<td id="subjectDetailsReleaseTimestamp"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="showDetailsPopupFooter">
+			<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.close}">Close</button>
+		</div>
+	</div>
+
+</div>
+<script type="text/javascript" th:inline="javascript">
+    initPage();
+
+    function initPage() {
+        const opts = {
+            "columnDefs": [
+                {
+                    "targets": [0, 1, 2],
+                    "type": "string",
+                },
+                {
+                    "targets": 6,
+                    "orderable": false,
+                    "searchable": false,
+                },
+                {
+                    "targets": [7, 8],
+                    "orderable": false,
+                    "searchable": false,
+                    "visible": false,
+                },
+            ],
+            order: [4, 'desc'],
+        };
+        // date columns are treated as strings, because DataTables can't sort our date format without plugins
+        randimi.setUpDatatable("subjectListTable", opts);
+    }
+
+	function updatePopUp(entryId, entryPseudonym, entryStatus, siteId) {
+		const deleteDialogueText = /*[[#{subjects.view.deleteSubject.popupText}]]*/ 'Do you really want to delete the subject SUBJECT_PLACEHOLDER? Please give a reason.';
+
+		document.getElementById('popup-text').innerText = deleteDialogueText.replace("SUBJECT_PLACEHOLDER", "'" + entryPseudonym + "'");
+		document.getElementById('siteId').value = siteId;
+		document.getElementById('subjectId').value = entryId;
+
+		const release = document.getElementById('release');
+		const releaseDummy = document.getElementById('releaseDummy');
+
+		if (entryStatus === 'ACTIVE') {
+			releaseDummy.style.display = 'none';
+            release.style.display = "block";
+			release.checked = false;
+		} else {
+			releaseDummy.style.display = 'block';
+			releaseDummy.checked = true;
+            release.style.display = "none";
+			release.checked = true;
+		}
+	}
+
+	function updatePseudonymPopUp(entryId, entryPseudonym) {
+		const editDialogueText = /*[[#{subjects.view.editPseudonym.popupText}]]*/ 'Please enter the new pseudonym for the subject SUBJECT_PLACEHOLDER.';
+
+		document.getElementById('editPseudonymPopupText').innerText = editDialogueText.replace("SUBJECT_PLACEHOLDER", "'" + entryPseudonym + "'");
+		document.getElementById('editSubjectId').value = entryId;
+		document.getElementById('pseudonym').value = entryPseudonym;
+	}
+
+    /**
+     * Updates the details popup.
+     * @param {HTMLElement} detailsButton The pressed button.
+     */
+    function updateDetailsPopup(detailsButton) {
+        const row = detailsButton.closest('tr');
+        document.getElementById('subjectDetailsIndex').innerText = row.cells[0].innerText;
+        document.getElementById('subjectDetailsPseudonym').innerText = row.cells[2].innerText;
+        document.getElementById('subjectDetailsLocation').innerText = row.cells[3].innerText;
+        document.getElementById('subjectDetailsStudyArm').innerText = row.cells[1].innerText;
+        document.getElementById('subjectDetailsStatus').innerHTML = row.cells[5].innerHTML;
+        document.getElementById('subjectDetailsRandomizationTimestamp').innerText = row.cells[4].innerText;
+        document.getElementById('subjectDetailsDeletionTimestamp').innerText = row.cells[7].innerText;
+        document.getElementById('subjectDetailsReleaseTimestamp').innerText = row.cells[8].innerText;
+    }
+</script>
+</body>
+</html>

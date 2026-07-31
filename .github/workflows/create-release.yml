@@ -1,0 +1,145 @@
+name: Build, push Docker images, and create release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Get project version
+        id: version
+        run: echo "version=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install with Maven
+        run: mvn -B -am clean package -DskipTests=true
+
+      - name: Rename WAR for release
+        run: cp target/ROOT.war target/RandIMI-${{ steps.version.outputs.version }}.war
+
+      - name: Upload WAR artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: RandIMI-${{ steps.version.outputs.version }}.war
+          path: target/RandIMI-${{ steps.version.outputs.version }}.war
+          if-no-files-found: error
+
+      # Build randimi docker image
+      - name: Build Docker images
+        run: VERSION=${{ steps.version.outputs.version }} docker compose -f docker-compose-build.yml build
+
+      # Login to Docker registry
+      - name: Log in to Docker registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Push the images
+      - name: Push Docker images
+        run: VERSION=${{ steps.version.outputs.version }} docker compose -f docker-compose-build.yml push
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: RandIMI-${{ env.VERSION }}.war
+          path: target
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: RandIMI v${{ env.VERSION }}
+          files: target/RandIMI-${{ env.VERSION }}.war
+          generate_release_notes: true
+
+  deploy-swagger-ui:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build WAR
+        run: mvn -B -am clean package -DskipTests=true
+
+      - name: Build and start app with database
+        run: |
+          docker compose -f Docker/docker-compose-build-swagger.yml up -d
+          echo "Waiting for app to start..."
+          for i in {1..180}; do
+            if curl -sf http://localhost:8080/api-docs -o api-docs.json; then
+              echo "App is up!"
+              break
+            fi
+            sleep 2
+          done
+          if [ ! -s api-docs.json ]; then
+            echo "Failed to get API docs. Container logs:"
+            docker compose -f Docker/docker-compose-build-swagger.yml logs
+            exit 1
+          fi
+          docker compose -f Docker/docker-compose-build-swagger.yml down
+
+      - name: Download Swagger UI
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Swagger UI via npm
+        run: |
+          npm install swagger-ui-dist
+          cp -r node_modules/swagger-ui-dist swagger-ui
+
+      - name: Assemble static docs site
+        run: |
+          rm -rf docs
+          mkdir -p docs
+          cp -r swagger-ui/* docs/
+          cp api-docs.json docs/openapi.json
+          cp .github/workflows/swagger-ui-index.html docs/index.html
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * @author Daniel Preciado-Marquez
+     */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{subjects.view.headline(${study.guiName})},
+                                                           links=~{::head/th:block},
+                                                           header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+                                                           content=~{::#contentDiv},
+                                                           script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title th:text="'Randimi - ' + #{subjects.view.headline(${study.guiName})}">Randimi - Show Subjects</title>
+	<th:block>
+		<link rel="stylesheet" type="text/css" charset="utf8" href=""
+		      th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
+		<script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
+	</th:block>
+</head>
+<body>
+<header>
+	<h1 th:text="#{subjects.view.headline(${study.guiName})}">Show Subjects</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='subjects')}"></div>
+
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+		<!-- Add Subject button -->
+		<th:block th:if="${study.isActive() || study.isInTestMode()}">
+			<form th:replace="~{fragments/sidebar.html :: sidebarAction(action=@{/subjects/add}, icon='fa-user-plus', id='addSubjectButton', label=#{subjects.view.add}, name='id', value=${study.getId()})}"></form>
+		</th:block>
+
+		<!-- Download button-->
+		<a data-bs-target="#exportPopup" data-bs-toggle="modal" href="" class="btn btn-primary randimi-sidebar-button">
+			<span class="fas fa-cloud-download-alt randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{subjects.view.downloadSubjectList}"></span>
+		</a>
+
+		<!-- Back-button to studies page -->
+		<div th:replace="~{fragments/sidebar.html :: backButton(action=@{/studies})}"></div>
+	</div>
+</div>
+
+<!--/* Content of the current study */-->
+<div id="contentDiv" class="randimi-content-box randimi-dataTables">
+	<table id="subjectListsTable" class="randimi-table">
+		<thead>
+		<tr>
+			<th th:each="stratumPart, stratumPartIterator : ${study.enumeratedStratums}"
+			    th:text="${stratumPart.guiName}"
+			    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
+			</th>
+			<th th:if="${study.stratifyBySite}" th:text="#{subjects.list.site}"
+			    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
+				Site
+			</th>
+			<th th:text="#{subjects.list.statistic}" style="width: 10%;">
+				Subjects / Capacity
+			</th>
+			<th>
+				<!--/* Hidden column for sorting by number of subjects */-->
+			</th>
+			<th th:text="#{subjects.view.actions}" style="width: 10%;">Actions</th>
+		</tr>
+		</thead>
+		<tbody>
+		<th:block th:each="subjectList, subjectListIterator : ${subjectLists}">
+			<tr>
+				<td th:each="part : ${subjectList.stratumParts}" th:text="${part.getDisplayName()}">
+
+				</td>
+				<td>
+					<span th:text="${capacities[subjectListIterator.index].first}"></span>
+					<span> / </span>
+					<span th:text="${capacities[subjectListIterator.index].second}"></span>
+				</td>
+				<td th:text="${capacities[subjectListIterator.index].first}">
+					<!--/* Hidden column for sorting by number of subjects */-->
+				</td>
+				<td>
+					<div class="randimi-column-action">
+						<!-- Show -->
+						<a th:href="@{/studies/{studyId}/subject-lists/{subjectListId}(studyId = ${study.apiId}, subjectListId = ${subjectList.id})}">
+							<span class="fas fa-eye" aria-hidden="true" th:title="#{subjects.view.showList}"></span>
+						</a>
+					</div>
+				</td>
+			</tr>
+		</th:block>
+		</tbody>
+	</table>
+
+	<!--/* Export popup */-->
+	<form method="GET" th:action="@{/studies/{studyId}/subject-lists/download(studyId=${study.apiId})}">
+		<div th:replace="~{fragments/subject-export-popup.html :: subject_export_popup(popupId='exportPopup', study=${study})}">
+		</div>
+	</form>
+</div>
+<script type="text/javascript" th:inline="javascript">
+    initPage();
+
+    function initPage() {
+        const numberStrata = /*[[${subjectLists[0].stratumParts.size()}]]*/ 0;
+
+        randimi.setUpDatatable('subjectListsTable', {
+			'columnDefs': [
+                {'targets': [numberStrata], 'orderData': [numberStrata + 1]},
+                {'targets': [numberStrata + 1], 'visible': false, 'searchable': false, 'type': 'num'},
+                {'targets': [numberStrata + 2], 'orderable': false}
+			],
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<title>Subject export popup</title>
+</head>
+<body>
+
+<!--/*@thymesVar id="popupId" type="java.lang.String"*/-->
+<!--/*@thymesVar id="study" type="de.unimuenster.imi.randimi.dto.study.StudyDTO"*/-->
+<!--/*@thymesVar id="subjectList" type="de.unimuenster.imi.randimi.dto.subject.SubjectListDTO"*/-->
+<th:block th:fragment="subject_export_popup(popupId, study)" th:with="subjectList=${subjectList} ?: null">
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId=${popupId}, popupTitleMessageCode='subjects.export.title', bodyContent=~{::#subjectExportPopupBody}, footerContent=~{::#subjectExportPopupFooter})}">
+		<div id="subjectExportPopupBody">
+
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{subjects.export.format}, content=~{::#formatFieldsetDiv})}">
+				<div id="formatFieldsetDiv">
+					<!--/* Select for format */-->
+					<div th:replace="~{fragments/inputs.html :: selectInput(fieldName='format', hasBinding=false, label=#{subjects.export.format}, onChange='toggleDelimiter()', options=~{::.formatOption}, value='csv')}">
+						<option th:each="format : ${T(de.unimuenster.imi.randimi.model.enumeration.ExportFileType).values()}"
+						        class="formatOption" th:value="${format}" th:text="${format}"
+						        th:selected="${format} == ${T(de.unimuenster.imi.randimi.model.enumeration.ExportFileType).CSV}"></option>
+					</div>
+
+					<!--/* Select for CSV-Delimiter */-->
+					<div id="csvDelimiter">
+						<div th:replace="~{fragments/inputs.html :: selectInput(fieldName='delimiter', hasBinding=false, label=#{subjects.export.delimiter}, options=~{::.delimiter-option})}">
+							<option th:each="format : ${T(de.unimuenster.imi.randimi.model.enumeration.Delimiter).values()}"
+							        class="delimiter-option" th:value="${format}"
+							        th:text="#{__${'enum.Delimiter.' + format.name()}__}"></option>
+						</div>
+					</div>
+
+					<!--/* Option to split subject lists in multiple files */-->
+					<th:block th:if="${subjectList == null}">
+						<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='splitFiles', hasBinding=false, label=#{subjects.export.splitFiles}, value='splitFiles')}"></div>
+					</th:block>
+
+					<!--/* Option to include API IDs */-->
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='includeApiIds', hasBinding=false, label=#{subjects.export.includeApiIds}, value='on')}"></div>
+				</div>
+			</fieldset>
+
+			<!--/* Filter for status */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{subjects.export.status}, content=~{::#statusFieldsetDiv})}">
+				<div id="statusFieldsetDiv" class="randimi-grid-checkbox-group">
+					<th:block th:each="status : ${T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).values()}">
+						<th:block sec:authorize="hasRole('ROLE_ADMIN')" th:if="${status} == ${T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).PRE_GENERATED}">
+							<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='status', hasBinding=false, isChecked=false, isGroup=${true}, label=#{'enum.SubjectStatus.' + ${status.name()}} + ' <span style=\'color: red;\'>' + #{subjects.export.warning.preGenerated}, value=${status.name()} + '</span>' )}"></div>
+						</th:block>
+						<th:block th:unless="${status} == ${T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).PRE_GENERATED}">
+							<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='status', hasBinding=false, isChecked=true, isGroup=${true}, label=#{'enum.SubjectStatus.' + ${status.name()}}, value=${status.name()})}"></div>
+						</th:block>
+					</th:block>
+				</div>
+			</fieldset>
+
+			<!--/* Filter for sites */-->
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{subjects.export.sites}, content=~{::#siteFieldsetDiv})}">
+				<div id="siteFieldsetDiv" class="randimi-grid-checkbox-group siteFieldsetDiv">
+					<th:block th:if="${subjectList != null} and ${study.isStratifyBySite()}"
+					          th:with="site=${@stratumCodeService.getSiteDTO(subjectList.stratumParts).get()}">
+						<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='sites', hasBinding=false, isChecked=true, isDisabled=true, isGroup=${true}, label=${site.guiName}, onChange=|updateSubjectListCount();|, toggleable='true', value=${site.getApiId()})}"></div>
+					</th:block>
+					<th:block th:unless="${subjectList != null} and ${study.isStratifyBySite()}">
+						<th:block th:if="${study.sites.size() > 0}" th:each="site : ${study.sites}">
+							<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='sites', hasBinding=false, isChecked=true, isGroup=${true}, label=${site.guiName}, onChange=|updateSubjectListCount();|, value=${site.getApiId()})}"></div>
+						</th:block>
+						<th:block th:unless="${study.sites.size() > 0}">
+							<div th:text="#{subjects.export.noSites}"></div>
+						</th:block>
+					</th:block>
+				</div>
+			</fieldset>
+
+			<!--/* Filter for strata */-->
+			<div th:each="stratum, stratumItr: ${study.enumeratedStratums}" class="mb-3">
+				<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=${stratum.guiName}, content=~{::#strataFieldsetDiv})}">
+					<div id="strataFieldsetDiv"  class="randimi-grid-checkbox-group strataFieldsetDiv">
+						<th:block th:if="${subjectList != null}" th:with="part=${subjectList.stratumParts[stratumItr.index]}">
+							<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName=${stratum.apiId}, hasBinding=false, isChecked=true, isDisabled=true, isGroup=${true}, label=${part.optionName}, onChange=|updateSubjectListCount();|, toggleable='true', value=${part.optionValue})}"></div>
+						</th:block>
+						<th:block th:unless="${subjectList != null}">
+							<th:block th:each="part : ${stratum.stratumParts}">
+								<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName=${stratum.apiId}, hasBinding=false, isChecked=true, isGroup=${true}, label=${part.optionName}, onChange=|updateSubjectListCount();|, value=${part.optionValue})}"></div>
+							</th:block>
+						</th:block>
+					</div>
+				</fieldset>
+			</div>
+		</div>
+		<div id="subjectExportPopupFooter">
+			<!-- Download button-->
+			<button type="submit" class="btn btn-primary">
+				<span th:text="#{subjects.view.downloadSubjectList}"/>
+			</button>
+		</div>
+	</div>
+
+	<script type="text/javascript" th:inline="javascript">
+		window.onload = function () {
+            updateSubjectListCount();
+		}
+
+        function toggleDelimiter() {
+            const selectedFormat = document.getElementById('format').value;
+            const delimiterDiv = document.getElementById('csvDelimiter');
+            if (selectedFormat === "CSV") {
+                delimiterDiv.style.display = '';
+            } else {
+                delimiterDiv.style.display = 'none';
+            }
+        }
+
+        /**
+         * Updates the number of files for the separate list download.
+         */
+		function updateSubjectListCount() {
+            const label = document.getElementById('splitFilesLabelText');
+            if (!label) {
+                return;
+            }
+
+            let count = 1;
+
+            let stratifiedBySite = /*[[${study.isStratifyBySite()}]]*/ false;
+
+            if (stratifiedBySite) {
+                count *= countCheckboxes("siteFieldsetDiv");
+            }
+
+            count *= countCheckboxes("strataFieldsetDiv");
+
+            let message = /*[[#{subjects.export.splitFiles}]]*/ ''
+			message = message.replace('_', count.toString(10));
+			label.innerText = message;
+		}
+
+        /**
+         * Returns the number of checked checkboxes inside all elements with the given class name.
+         * Returns 1, if no element with the given class name exists.
+         *
+         * @param {string} className Class name of the parent HTML elements.
+         * @return {number} Number of checked checkboxes.
+         */
+        function countCheckboxes(className) {
+            let count = 1;
+
+            const elements = document.getElementsByClassName(className);
+
+            if (elements.length === 0) {
+                return count;
+            }
+
+            for (const element of elements) {
+                count *= element.querySelectorAll('input[type="checkbox"]:checked').length;
+            }
+
+            return count;
+        }
+	</script>
+</th:block>
+
+</body>
+</html>

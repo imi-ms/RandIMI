@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<!--/**
+     * Fragment for the statistics page of a study.
+     *
+     * @author Daniel Preciado-Marquez
+     */-->
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{study.statistics.title},
+                                                           links=~{::head/th:block},
+                                                           header=~{::header/h1},
+                                                           sidebar=~{::#sidebarContent},
+                                                           content=~{::#contentDiv},
+                                                           script=~{::body/script})}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title th:text="'Randimi - ' + #{study.statistics.title}">Randimi - Statistics</title>
+	<th:block>
+		<script type="text/javascript" th:src="@{/webjars/echarts/echarts.js}"></script>
+		<script type="text/javascript" th:src="@{/resources/js/studyStatistics.js}"></script>
+	</th:block>
+</head>
+<body>
+<header>
+	<h1 id="studyStatisticsHeader" th:text="#{study.statistics.title}" class="selenium-language-test">Statistics</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div class="randimi-sidebar-section">
+
+		<!--/* Navigation */-->
+		<div th:replace="~{fragments/sidebar.html :: navigation(study=${study}, selected='statistics')}"></div>
+
+		<!--/* Actions */-->
+		<div class="randimi-sidebar-section">
+			<div class="randimi-sidebar-section-header selenium-language-test" th:text="#{sidebar.actions}"></div>
+
+			<!--/* Back Button */-->
+			<div th:replace="~{fragments/sidebar.html :: backButton(action=@{/studies})}"></div>
+		</div>
+	</div>
+
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header selenium-language-test" th:text="#{sidebar.submenus}">Submenus</div>
+
+		<button id="siteStatisticsButton" type="button" class="btn btn-primary randimi-sidebar-button" onclick="openSiteStatistics()">
+			<span class="fas fa-hospital-alt randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.statistics.sidebar.show-site}"></span>
+		</button>
+
+		<button id="strataStatisticsButton" type="button" class="btn btn-primary randimi-sidebar-button"
+		        onclick="openStrataStatistics()">
+			<span class="fas fa-layer-group randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.statistics.sidebar.show-strata}"></span>
+		</button>
+	</div>
+</div>
+
+<!-- Content of the study statistics -->
+<div id="contentDiv">
+
+	<!--/* Site statistics */-->
+	<div id="siteStatistics" class="randimi-content-box">
+
+		<!--/* Search bar */-->
+		<div class="mb-3">
+			<div id="siteStatisticsFilter" class="randimi-autocomplete-container">
+				<input type="text" class="form-control" th:placeholder="#{study.statistics.filter}"
+				       th:aria-label="#{study.statistics.filter}">
+				<div class="randimi-autocomplete">
+					<div class="randimi-autocomplete-suggestions">
+
+						<div th:each="studyArm : ${study.studyArms}" class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-type='study-arm', data-randimi-value=${studyArm.apiId}">
+							[[#{study.statistics.study-arm}]] | [[${studyArm.guiName}]]
+						</div>
+
+						<div th:each="site : ${study.sites}" class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-type='site', data-randimi-value=${site.guiName}">
+							[[#{study.statistics.site}]] | [[${site.guiName}]]
+						</div>
+					</div>
+				</div>
+				<div class="randimi-autocomplete-selected">
+				</div>
+				<div class="randimi-autocomplete-template">
+					<div class="randimi-autocomplete-selected-item">
+						<span class="fas fa-times randimi-autocomplete-selected-item-icon"></span>
+						<span class="randimi-autocomplete-selected-item-value"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!--/* Graph settings */-->
+		<div class="d-flex flex-row gap-3">
+			<div class="mb-3">
+				<span class="randimi-switch" tabindex="0">
+					<input type="checkbox" id="siteChartShowCapacities" tabindex="-1" oninput="toggleSiteChartCapacities()">
+					<span class="randimi-switch-slider"></span>
+				</span>
+				<label for="siteChartShowCapacities" class="d-inline selenium-language-test" th:text="#{study.statistics.show-capacities}"></label>
+			</div>
+			<div class="mb-3">
+				<span class="randimi-switch" tabindex="0">
+					<input type="checkbox" id="siteChartStack" tabindex="-1" oninput="toggleSiteChartStack()">
+					<span class="randimi-switch-slider"></span>
+				</span>
+				<label for="siteChartStack" class="d-inline selenium-language-test" th:text="#{study.statistics.stack}"></label>
+			</div>
+		</div>
+
+		<!--/* Graph */-->
+		<div id="siteChart" class="randimi-chart mb-3">
+		</div>
+
+		<!--/* Table */-->
+		<div>
+			<table id="siteStatisticsTable" class="randimi-table">
+				<thead>
+				<tr>
+					<th></th>
+
+					<th th:each="studyArm : ${study.studyArms}" class="randimi-statistics-column"
+					    th:text="${studyArm.guiName}" th:attr="data-randimi-study-arm=${studyArm.apiId}"></th>
+
+					<th class="selenium-language-test" th:text="#{study.statistics.chart.all-arms}"></th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:each="siteStatstic, itr : ${statistics.siteStatistics}" class="randimi-statistics-row"
+					th:attr="data-randimi-site=${siteStatstic.site.guiName}">
+					<td class="selenium-language-test" th:text="${siteStatstic.site.guiName}"></td>
+
+					<td th:each="studyArm : ${siteStatstic.getNumberSubjectsPerStudyArm().entrySet()}"
+					    class="randimi-statistics-column"
+					    th:text="|${studyArm.value} / ${siteStatstic.getCapacityPerStudyArm()}|"
+					    th:attr="data-randimi-study-arm=${studyArm.key},data-randimi-row=${itr.index}"></td>
+
+					<td th:text="|${siteStatstic.numberSubjects} / ${siteStatstic.site.capacity}|"
+					    th:attr="data-randimi-acc=${itr.index}" data-randimi-row="all"
+					    data-randimi-study-arm="all"></td>
+				</tr>
+
+				<tr>
+					<td class="selenium-language-test" th:text="#{study.statistics.chart.all-sites}"></td>
+					<td th:each="studyArm : ${study.studyArms}" class="randimi-statistics-column"
+					    th:attr="data-randimi-study-arm=${studyArm.apiId},data-randimi-acc-study-arm=${studyArm.apiId}">
+					</td>
+					<td data-randimi-acc="all" data-randimi-acc-study-arm="all"></td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+
+	</div>
+
+	<!--/* Strata statistics */-->
+	<div id="strataStatistics" class="randimi-content-box">
+
+		<!--/* Search bar */-->
+		<div style="margin-bottom: 1rem;">
+
+			<div id="strataStatisticsFilter" class="randimi-autocomplete-container">
+				<input type="text" class="form-control" th:placeholder="#{study.statistics.filter}"
+				       th:aria-label="#{study.statistics.filter}">
+				<div class="randimi-autocomplete">
+					<div class="randimi-autocomplete-suggestions">
+
+						<div th:each="studyArm : ${study.studyArms}" class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-type='study-arm', data-randimi-value=${studyArm.apiId}">
+							[[#{study.statistics.study-arm}]] | [[${studyArm.guiName}]]
+						</div>
+
+						<th:block th:each="stratum : ${study.enumeratedStratums}">
+							<div th:each="stratumPart: ${stratum.stratumParts}" class="randimi-autocomplete-suggestion"
+							     th:attr="data-randimi-type='stratum', data-randimi-stratum-value=${stratum.id}, data-randimi-part-value=${stratumPart.guiName}">
+								[[${stratum.guiName}]] | [[${stratumPart.guiName}]]
+							</div>
+						</th:block>
+
+						<th:block th:if="${study.isStratifyBySite()}" th:with="stratum=${study.siteStratum}">
+							<div th:each="stratumPart: ${stratum.stratumParts}" class="randimi-autocomplete-suggestion"
+							     th:attr="data-randimi-type='stratum', data-randimi-stratum-value=${stratum.id}, data-randimi-part-value=${stratumPart.site.guiName}">
+								[[#{study.statistics.site}]] | [[${stratumPart.getDisplayName()}]]
+							</div>
+						</th:block>
+					</div>
+				</div>
+				<div class="randimi-autocomplete-selected">
+				</div>
+				<div class="randimi-autocomplete-template">
+					<div class="randimi-autocomplete-selected-item">
+						<span class="fas fa-times randimi-autocomplete-selected-item-icon"></span>
+						<span class="randimi-autocomplete-selected-item-value"></span>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<!--/* Graph settings */-->
+		<div class="d-flex flex-row gap-3">
+			<div class="mb-3">
+				<span class="randimi-switch" tabindex="0">
+					<input type="checkbox" id="strataChartShowCapacities" tabindex="-1" oninput="toggleStrataChartCapacities()">
+					<span class="randimi-switch-slider"></span>
+				</span>
+				<label for="strataChartShowCapacities" class="d-inline selenium-language-test" th:text="#{study.statistics.show-capacities}"></label>
+			</div>
+			<div class="mb-3">
+				<span class="randimi-switch" tabindex="0">
+					<input type="checkbox" id="strataChartStack" tabindex="-1" oninput="toggleStrataChartStack()">
+					<span class="randimi-switch-slider"></span>
+				</span>
+				<label for="strataChartStack" class="d-inline selenium-language-test" th:text="#{study.statistics.stack}"></label>
+			</div>
+		</div>
+
+		<!--/* Graph */-->
+		<div id="strataChart" class="randimi-chart mb-3">
+		</div>
+
+		<!--/* Table */-->
+		<div>
+			<table id="strataStatisticsTable" class="randimi-table">
+				<thead>
+				<tr>
+					<th></th>
+
+					<th th:each="studyArm : ${study.studyArms}" class="randimi-statistics-column"
+					    th:text="${studyArm.guiName}" th:attr="data-randimi-study-arm=${studyArm.apiId}"></th>
+
+					<th class="selenium-language-test" th:text="#{study.statistics.chart.all-arms}"></th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:each="subjectListStatstic, itr : ${statistics.subjectListStatistics}"
+				    class="randimi-statistics-row"
+				    th:attr="__${subjectListStatstic.getDataAttribute()}__">
+					<td th:text="${subjectListStatstic.getStratumPartNames()}"></td>
+
+					<td th:each="studyArm : ${subjectListStatstic.getNumberSubjectsPerStudyArm().entrySet()}"
+					    class="randimi-statistics-column"
+					    th:text="|${studyArm.value} / ${subjectListStatstic.getCapacityPerStudyArm()}|"
+					    th:attr="data-randimi-study-arm=${studyArm.key},data-randimi-row=${itr.index}"></td>
+
+					<td th:text="|${subjectListStatstic.numberSubjects} / ${subjectListStatstic.capacity}|"
+					    th:attr="data-randimi-acc=${itr.index}" data-randimi-row="all" data-randimi-study-arm="all">
+					</td>
+				</tr>
+
+				<tr th:if="${statistics.subjectListStatistics.size() > 1}">
+					<td th:text="#{study.statistics.chart.all-strata}"></td>
+					<td th:each="studyArm : ${study.studyArms}" class="randimi-statistics-column"
+					    th:attr="data-randimi-study-arm=${studyArm.apiId},data-randimi-acc-study-arm=${studyArm.apiId}"></td>
+					<td data-randimi-acc="all" data-randimi-acc-study-arm="all"></td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+
+	</div>
+
+
+</div>
+
+<script type="text/javascript" th:inline="javascript">
+    const allSitesLabel = /*[[#{study.statistics.chart.all-sites}]]*/ 'All Sites';
+    const allStrataLabel = /*[[#{study.statistics.chart.all-strata}]]*/ 'All Strata';
+    const studyApiId = /*[[${study.apiId}]]*/ '';
+    const siteApiIds = /*[[${study.getSiteApiIds()}]]*/ [];
+    const apiPath = /*[[@{/api/v2/study/API_ID/statistics}]]*/ '/api/v2/study/API_ID/statistics';
+    const studyCapacity = /*[[${study.capacity}]]*/ 0;
+    const mainTextColor = /*[[${mainTextColor}]]*/ '#000';
+
+    /**
+     * @type {StratumDTO[]}
+     */
+    const strata = /*[[${study.enumeratedStratums}]]*/ [];
+
+    /**
+     * @type {StratumDTO | null}
+     */
+    const siteStratum = /*[[${study.siteStratum}]]*/ null;
+
+    /**
+     * @type {SubjectListStatisticsDTO[]}
+     */
+    const subjectListStatistics = /*[[${statistics.subjectListStatistics}]]*/ [];
+
+    initPage();
+</script>
+
+</body>
+</html>

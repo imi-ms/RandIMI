@@ -1,0 +1,15 @@
+services:
+  randimi-dev-db:
+    image: postgres:16-alpine
+    container_name: randimi_dev_db
+    restart: no
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - randimi-dev-db-data:/var/lib/postgresql/data
+      - ./src/main/resources/db/db_create.sql:/docker-entrypoint-initdb.d/01-db-create.sql:ro
+
+volumes:
+  randimi-dev-db-data:

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/**
+	 * Thymeleaf fragment containing user icon. 
+	 * 
+	 * If Gravatar is enabled in the settings and the user has enabled it, the icon is 
+	 * fetched from Gravatar, otherwise a default ion is shown.
+	 *
+	 * @param hash (fragment) Gravatar hash used in the url.
+	 * @param enabled (fragment) Individueal choice of the user to use gravatar.
+	 * @param gravatarSize (optional) Size of the requested image. Default is 80px.
+	 * @param imageHeight (optional) Height of the image to be displayed. Default is 1.25em.
+	 * @param gravatarEnabled (global) Global server settings, if gravatar should be used.
+	 * @param gravatarDefaultOption (global) Global server settings, which icon should be loaded for unknown hashes.
+	 * 
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Gravatar Fragments</title>
+	</head>
+	<body>
+		<th:block th:fragment="gravatar_icon(hash,enabled)"
+				  th:with="gravatarSize=${gravatarSize} ?: 80,
+						   imageHeight=${imageHeight} ?: '1.25em'">
+			<img th:if="${gravatarEnabled} and ${enabled}"
+				 th:src="@{https://gravatar.com/avatar/{hash}(hash=${hash},d=${gravatarDefaultOption},s=${gravatarSize})}"
+				 th:style="|height:${imageHeight};|" 
+				 class="rounded-circle" />
+			<span th:unless="${gravatarEnabled} and ${enabled}"
+				  class="fas fa-user-circle" 
+				  aria-hidden="true"></span>
+		</th:block>
+	</body>
+</html>

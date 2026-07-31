@@ -1,0 +1,241 @@
+# Contains three pipelines
+# 1. Run tests before merge into main branch
+#   - jobs: build-war, build-docker, test-job
+# 2. Create release on tag creation
+#   - jobs: build-war, upload-job, release-job
+# 3. Sync release to GitHub and GitHub Wiki
+#   - jobs: sync-to-github, sync-to-github-wiki
+#   - You can trigger the sync on push by changing the variable "<sync_branch_name>" and uncommenting the corresponding lines
+
+stages:
+  - build
+  - test
+  - upload
+  - release
+  - sync
+
+default:
+  image: maven:3-eclipse-temurin-17-focal
+  tags:
+    - dind
+  # Cache Maven dependencies to speed up builds
+  cache:
+    key: ${CI_PROJECT_ID}
+    paths:
+      - .m2/
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=./.m2/repository"
+  # Name of the war file create by 'mvn package'
+  SOURCE_WAR_NAME: "ROOT.war"
+  # Name of the resulting war file (version and postfix will be added automatically)
+  TARGET_NAME: "RandIMI"
+
+build-war:
+  stage: build
+  script:
+    - mvn clean -Dmaven.test.skip=true
+    - mvn compile -Dmaven.test.skip=true
+    - mvn package -Dmaven.test.skip=true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+    - if: '$CI_COMMIT_TAG != null'
+  artifacts:
+    paths:
+      - target/${SOURCE_WAR_NAME}
+
+build-docker:
+  stage: build
+  needs: ["build-war"]
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG || /bin/true
+    - docker build --pull --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG --build-arg BUILDKIT_INLINE_CACHE=1 -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Docker/Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        docker image tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
+        docker push "$CI_REGISTRY_IMAGE:latest"
+      fi
+  rules:
+   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+
+test-job:
+  stage: test
+  tags:
+    - testcontainers
+  services:
+    - name: docker:dind
+      alias: dind-docker
+      command: ["--tls=false"]
+    - postgres:16
+    - name: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+      alias: tomcatserver
+      variables:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/randimi_test_db
+        SPRING_DATASOURCE_USERNAME: randomuser
+        SPRING_DATASOURCE_PASSWORD: $DB_PASSWORD
+        HEALTHCHECK_TCP_PORT: "8080"
+  variables:
+    MAVEN_CLI_OPTS: "-Dmaven.test.failure.ignore=false" # Fail the pipeline if tests fail
+    TESTCONTAINERS_RYUK_DISABLED: "true" # If using Ryuk container in Testcontainers
+    DOCKER_HOST: "tcp://dind-docker:2375/" # Allow Testcontainers to interact with Docker
+    DOCKER_TLS_CERTDIR: "" # Disable TLS for Docker-in-Docker
+    DOCKER_DRIVER: overlay2
+
+    POSTGRES_DB: randimi_test_db
+    POSTGRES_USER: randomuser
+    POSTGRES_PASSWORD: $DB_PASSWORD
+
+    RANDIMI_SELENIUM_RUNRANDIMIINDOCKER: true
+    RANDIMI_SELENIUM_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/randimi_test_db
+    SPRING_DATASOURCE_USERNAME: randomuser
+    SPRING_DATASOURCE_PASSWORD: $DB_PASSWORD
+
+    CI_DEBUG_SERVICES: "true"
+  before_script:
+    - mkdir -p /root/.docker
+    # Generate the config.json file with credentials for private registry
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n "$CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD" | base64)\"}}}" > /root/.docker/config.json
+    - echo "Running tests..."
+  script:
+    - mvn test
+  rules:
+   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+  artifacts:
+    when: on_failure
+    paths:
+      - target/surefire-reports/
+      - target/selenium-screenshots/
+
+upload-job:
+  # Uploads the war file to the project's package registry
+  stage: upload
+  image: curlimages/curl:latest
+  rules:
+    - if: '$CI_COMMIT_TAG != null'
+  script:
+    - |
+      PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}"
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file target/${SOURCE_WAR_NAME} ${PACKAGE_REGISTRY_URL}/${TARGET_NAME}-${CI_COMMIT_TAG}.war
+
+release-job:
+  # Creates a release containing the artifacts
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: '$CI_COMMIT_TAG != null'
+  needs:
+    - job: build-war
+      artifacts: true
+  script:
+    - echo "Creating a release for tag $CI_COMMIT_TAG"
+    - PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}"
+    - echo PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}"
+  release:
+    name: "${TARGET_NAME} $CI_COMMIT_TAG"
+    description: "Automatic created release $CI_COMMIT_TITLE"
+    tag_name: '$CI_COMMIT_TAG'
+    assets:
+      # Links the files uploaded in the previous job
+      links:
+        - name: ${TARGET_NAME}-${CI_COMMIT_TAG}.war
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/${TARGET_NAME}-${CI_COMMIT_TAG}.war
+  after_script:
+    - echo "Release job completed for tag $CI_COMMIT_TAG"
+
+extract_version:
+  stage: sync
+  image: maven:latest
+  rules:
+    # - if: $CI_COMMIT_REF_NAME == "<sync_branch_name>"
+    - if: '$CI_COMMIT_TAG != null'
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_DEPTH: "0"
+  script:
+    - export VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+    - echo "VERSION=$VERSION" > version.env
+  artifacts:
+    reports:
+      dotenv: version.env
+
+.sync_common:
+  stage: sync
+  image: alpine:latest
+  rules:
+    # - if: $CI_COMMIT_REF_NAME == "<sync_branch_name>"
+    - if: '$CI_COMMIT_TAG != null'
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_DEPTH: "0"
+  before_script:
+    # Setup git
+    - apk add --no-cache git
+    - git config --global user.email "$GIT_USER_EMAIL"
+    - git config --global user.name "$GIT_USER_NAME"
+    - export GIT_MERGE_MSG="Release v${VERSION}"
+  script:
+    # Start from the GitHub branch tip
+    - git checkout -B "$TARGET_BRANCH" "$TARGET_REMOTE/$TARGET_BRANCH"
+
+    # Replace the entire working tree with the GitLab branch snapshot
+    # (this reliably propagates deletions too)
+    - git rm -r --ignore-unmatch .
+    - git checkout "$SOURCE_REMOTE/$SOURCE_BRANCH" -- .
+    - git add -A
+
+    # Commit only if something actually changed
+    - |
+      if git diff --cached --quiet; then
+        echo "No changes to sync."
+        exit 0
+      fi
+    - git commit -m "$GIT_MERGE_MSG"
+
+    # Push the new snapshot commit
+    - git push "$TARGET_REMOTE" "$TARGET_BRANCH" --force-with-lease
+  after_script:
+    # Clean up to prevent token exposure
+    - git remote remove "$SOURCE_REMOTE"
+    - git remote remove "$TARGET_REMOTE"
+
+sync_to_github:
+  extends: .sync_common
+  needs:
+    - job: extract_version
+      artifacts: true
+  variables:
+    SOURCE_REMOTE: "origin"
+    # SOURCE_BRANCH: "<sync_branch_name>"
+    SOURCE_BRANCH: "main"
+    TARGET_REMOTE: "github"
+    TARGET_BRANCH: "main"
+  before_script:
+    - !reference [.sync_common, before_script]
+    - git fetch origin "$SOURCE_BRANCH"
+    - git remote add github "https://$GITHUB_TOKEN@$GITHUB_REPO"
+    - git fetch github "$TARGET_BRANCH"
+
+sync_to_github_wiki:
+  extends: .sync_common
+  needs:
+    - job: extract_version
+      artifacts: true
+  variables:
+    SOURCE_REMOTE: "gitlab-wiki"
+    SOURCE_BRANCH: "main"
+    TARGET_REMOTE: "github-wiki"
+    TARGET_BRANCH: "master"
+  before_script:
+    - !reference [.sync_common, before_script]
+    - git remote add gitlab-wiki "https://oauth2:$GITLAB_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.wiki.git"
+    - git fetch gitlab-wiki "$SOURCE_BRANCH"
+    - git remote add github-wiki "https://$GITHUB_TOKEN@$GITHUB_REPO.wiki.git"
+    - git fetch github-wiki "$TARGET_BRANCH"

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/**
+	 * Thymeleaf fragment containing the common navbar of RandIMI.
+	 *
+	 * @author Paul Schaub
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="../../resources/css/randimi.css" type="text/css">
+	</head>
+	<!-- <body>
+		<div th:fragment="common_navbar" id="navbar">
+			<nav class="navbar navbar-expand-sm bg-primary navbar-dark sticky-top">
+				<a th:href="@{/}"><img th:src="@{/resources/images/randimi_dices.png}" class="nav-logo" style="width: 8vw;"/></a> -->
+				<!--/* Brand */-->
+	<body>
+		<div th:fragment="common_navbar" id="navbar" class="sticky-top">
+			<!--/* Top NavBar */-->
+			<nav class="navbar navbar-expand-sm full-bg" style="min-height: 65px;">
+				<div class="container-fluid">
+					<!--/* Left side */-->
+					<ul class="navbar-nav me-auto">
+						<!--/* Brand */-->
+						<li>
+							<a id="main-page-button" th:href="@{/}" style="display: inline-block">
+								<img th:src="@{/resources/images/randimi_dices.png}" width="auto" height="55"/>
+							</a>
+						</li>
+					</ul>
+					<!--/* Right side */-->
+					<ul class="navbar-nav ms-auto my-lg-0 h5">
+						<!--/* Logout */-->
+						<li sec:authorize="isAuthenticated()" class="nav-item me-sm-4">
+							<a id="logout-button" class="nav-link btn-logout" href="javascript:formSubmit()">
+								<span class="fas fa-sign-out-alt" aria-hidden="true"></span>
+								<span class="selenium-language-test" th:text="#{logout}">Logout</span>
+							</a>
+						</li>
+						<!--/* Language select */-->
+						<li class="nav-item me-sm-2 h3">
+							<div class="dropdown language-selector" style="height: 100%; z-index: 9999;">
+								<a id="language-select-button" th:href="@{/}" data-bs-toggle="dropdown" data-close-others="true">
+									<img id="displayedFlag" th:src="@{|/resources/images/flags/${#locale}.png|}"/>
+								</a>
+								<ul class="dropdown-menu dropdown-menu-end" id="flags-list">
+									<li th:each="colorOpt : ${T(de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage).values()}" th:id="${colorOpt.tag}" class="language-li">
+										<a href="#" th:attr="data-lang=${colorOpt.tag}"
+										   onclick="changeLanguage(this.dataset.lang)" class="language">
+											<img th:src="@{|/resources/images/flags/${colorOpt.tag}.png|}"/>
+											<span class="selenium-language-test" th:text="${colorOpt.nativeDisplayName}">Native display name</span>
+										</a>
+									</li>
+								</ul>
+								<script>
+                                    function changeLanguage(lang) {
+                                        const url = new URL(window.location.href);
+                                        url.searchParams.set('lang', lang);
+                                        window.location.href = url.toString();
+                                    }
+								</script>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</nav>
+			<!--/* Bottom NavBar */-->
+			<nav class="navbar navbar-expand-sm bg-primary navbar-dark" style="min-height: 65px;">
+				<div class="container-fluid">
+					<!--/* Navigation */-->
+					<ul class="navbar-nav me-auto mt-2 mt-lg-0 h5" style="float: left;">
+						<li sec:authorize="hasAnyRole('ROLE_ADMIN', T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_LOCAL_MANAGER, 'ROLE_USER_MANAGER')"
+							class="nav-item nav-highlight active me-sm-4">
+							<a id="manage-user-button" class="selenium-language-test nav-link btn-navbar"
+							   th:href="@{/users}" th:text="#{welcome.viewUsers}">Manage Users</a>
+						</li>
+						<li sec:authorize="isAuthenticated()" class="nav-item nav-highlight active me-sm-4">
+							<a id="manage-studies-button" class="selenium-language-test nav-link btn-navbar"
+							   th:href="@{/studies}" th:text="#{welcome.viewStudies}">Manage Studies</a>
+						</li>
+						<li sec:authorize="hasRole('ROLE_ADMIN')" class="nav-item nav-highlight active me-sm-4">
+							<a id="settings-button" class="selenium-language-test nav-link btn-navbar"
+							   th:href="@{/settings/edit}" th:text="#{welcome.settings}">Settings</a>
+						</li>
+					</ul>
+					<!--/* User */-->
+					<span sec:authorize="isAuthenticated()" class="navbar-text me-sm-2 my-2 my-lg-0 h4 selenium-language-test" th:text="#{user} + ':'">User</span>
+					<ul sec:authorize="isAuthenticated()" class="navbar-nav my-2 my-lg-0 h4" style="float: right;">
+						<li class="nav-item nav-highlight active me-sm-2" style="float: right;">
+							<a id="user-edit-button" class="nav-link btn-navbar" th:href="@{/users/edit}">
+								<span th:replace="~{fragments/gravatar :: gravatar_icon(${#authentication.principal.gravatarHash},${#authentication.principal.gravatarEnabled})}"/>
+								<span id="user" sec:authentication="principal.fullName"></span>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</nav>
+			<div sec:authorize="isAuthenticated()">
+				<form th:action="@{/j_spring_security_logout}" method="post" id="logoutForm">
+					<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+				</form>
+				<script>
+					function formSubmit() {
+						document.getElementById("logoutForm").submit();
+					}
+				</script>
+			</div>
+		</div><!--/* navbar */-->
+	</body>
+</html>

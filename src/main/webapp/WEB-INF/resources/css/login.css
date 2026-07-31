@@ -1,0 +1,19 @@
+.login-welcome {
+	margin:auto;
+	text-align:center;
+	position:relative;
+	color: var(--randimi-main-text-color) !important;
+}
+
+.small-content {
+	min-width: 30em;
+	width: 40vw;
+	max-width: 50em;
+}
+
+@media screen and (max-width: 32em) {
+	.small-content {
+		min-width: 90vw;
+		width: 90vw;
+	}
+}

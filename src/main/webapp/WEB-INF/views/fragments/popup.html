@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--/**
+	 * Thymeleaf fragment containing the common popup of RandIMI. 
+	 *
+	 * @param popupId (fragment) ID of the popup used to link it.
+	 * @param popupTitleMessageCode (fragment) Message code of the displayed title.
+	 * @param bodyContent (fragment) Content of the popup.
+	 * @param footerContent (fragment) Optional, Content of the footer.
+	 * 
+	 * @author Tobias Brix <tobias.brix@uni-muenster.de>
+	 */-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8">
+	</head>
+	<body>
+		<!--/*@thymesVar id="popupId" type="java.lang.String"*/-->
+		<!--/*@thymesVar id="popupTitleMessageCode" type="java.lang.String"*/-->
+		<!--/*@thymesVar id="bodyContent" type="java.lang.String"*/-->
+		<!--/*@thymesVar id="footerContent" type="java.lang.String" optional*/-->
+		<div th:fragment="common_popup(popupId, popupTitleMessageCode, bodyContent)"
+		     th:with="footerContent=${footerContent} ?: ''"
+			 th:id="${popupId}" class="modal fade" role="dialog" tabindex="-1"
+		     aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="popup-content modal-content">
+					<div class="popup-header modal-header">
+						<h3 th:text="#{${popupTitleMessageCode}}">Title</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true" th:title="#{button.close}"
+							title="Close"></button>
+					</div>
+					<div class="popup-body modal-body">
+						<div th:replace="${bodyContent}"></div>
+					</div>
+					<div th:if="${footerContent != ''}" class="modal-footer">
+						<div th:replace="${footerContent}"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

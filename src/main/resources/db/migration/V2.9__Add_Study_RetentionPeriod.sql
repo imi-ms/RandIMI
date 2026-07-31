@@ -1,0 +1,2 @@
+ALTER TABLE study
+    ADD COLUMN retention_period TIMESTAMP WITHOUT TIME ZONE;

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html th:replace="~{fragments/main_layout :: common_layout(title='Randimi - ' + #{users.edit.headline},
+														header=~{::header/h1},
+														   sidebar=~{::#sidebarContent},
+														   content=~{::#contentDiv},
+														   script=~{::body/script})}"
+	  xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<title class="selenium-language-test" th:text="'Randimi - ' + #{users.edit.headline}">Randimi - Edit User Details</title>
+</head>
+<body>
+<!-- Headline -->
+<header>
+	<h1 id="headline" class="selenium-language-test" th:text="#{users.edit.headline(${accountDetails.username})}">Edit User Details</h1>
+</header>
+
+<!--/* Content of the sidebar */-->
+<div id="sidebarContent">
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.actions}"></div>
+
+		<!--/* Save Button */-->
+		<button th:replace="~{fragments/sidebar.html :: saveButton(formName='userForm')}"></button>
+
+		<!--/* Cancel Button */-->
+		<button th:replace="~{fragments/sidebar.html :: cancelButton(formName='userForm')}"></button>
+	</div>
+</div>
+
+<div id="contentDiv" sec:authorize="isAuthenticated()">
+	<form id="userForm" method="POST" th:action="@{/users/edit}" th:object="${accountDetails}">
+		<div class="mb-3 userForm">
+			<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.edit.userDetails}, content=~{::#editUserDiv})}">
+				<div id="editUserDiv">
+					<input type="hidden" class="form-control" th:field="*{id}"/>
+
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='username', label=#{users.edit.username}, maxLength=255)}"></div>
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='firstName', label=#{users.edit.firstName}, maxLength=255)}"></div>
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='lastName', label=#{users.edit.lastName}, maxLength=255)}"></div>
+					<div th:replace="~{fragments/inputs.html :: textInput(fieldName='mailAddress', label=#{users.edit.mail}, maxLength=255)}"></div>
+
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='updatePassword', label=#{users.edit.updatePassword}, onChange='toggleUpdatePassword()')}"></div>
+
+					<div id="updatePasswordDiv">
+						<div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='oldPassword', label=#{users.edit.oldPassword})}"></div>
+						<div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='newPassword', label=#{users.edit.newPassword})}"></div>
+						<div th:replace="~{fragments/inputs.html :: passwordInput(fieldName='repeatPassword', label=#{users.edit.repeatNewPassword})}"></div>
+					</div>
+				</div>
+			</fieldset>
+			<!--/* Privacy Settings */-->
+			<th:block th:if="${gravatarEnabled}">
+				<fieldset th:replace="~{fragments/inputs.html :: fieldset(legend=#{users.edit.userPrivacy}, content=~{::#editUserPrivacy})}">
+					<div id="editUserPrivacy">
+						<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='gravatarEnabled', label=#{users.edit.enableGravatar}, helpText=#{users.edit.gravatarHelpText})}"></div>
+					</div>
+				</fieldset>
+			</th:block>
+			<!--/* Field must be present, even if the option is disabled */-->
+			<input th:unless="${gravatarEnabled}" type="hidden" class="form-control" th:field="*{gravatarEnabled}" />
+		</div>
+	</form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        const hasErrors = /*[[${error != null and error != ''}]]*/ false;
+        randimi.preventUnloadAfterChange('userForm', ['saveButton', 'cancelButton'], hasErrors);
+
+        toggleUpdatePassword();
+    });
+
+    function toggleUpdatePassword() {
+        const updatePasswordValue = document.getElementById("updatePassword").checked
+        const updatePasswordDiv = document.getElementById("updatePasswordDiv");
+        if (updatePasswordValue)
+            updatePasswordDiv.classList.remove("d-none");
+        else
+            updatePasswordDiv.classList.add("d-none");
+    }
+</script>
+</body>
+</html>
