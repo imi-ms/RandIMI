@@ -1,10 +1,10 @@
 package de.unimuenster.imi.randimi.model.enumeration;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import de.unimuenster.imi.randimi.model.SelectInputOption;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Languages supported by RandIMI.
@@ -65,6 +65,7 @@ public enum SupportedLanguage implements SelectInputOption {
 	 * @param isoValue ISO value to check.
 	 * @return The associated SupportedLanguage.
 	 */
+	@Nullable
 	public static SupportedLanguage fromIsoValue(final String isoValue) {
 		return Arrays.stream(SupportedLanguage.values())
 					 .filter(e -> e.isoValue.equals(isoValue))

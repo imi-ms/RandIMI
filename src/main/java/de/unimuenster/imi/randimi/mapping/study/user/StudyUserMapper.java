@@ -5,8 +5,8 @@ import java.util.*;
 import de.unimuenster.imi.randimi.model.enumeration.PermissionType;
 import de.unimuenster.imi.randimi.model.user.AclSid;
 import de.unimuenster.imi.randimi.repository.user.RandimiUserRepository;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 import de.unimuenster.imi.randimi.dto.study.user.StudyUserDTO;
@@ -41,7 +41,7 @@ public class StudyUserMapper {
 	 * @param study The study to be mapped.
 	 * @return List of StudyUserDTO for all assigned users.
 	 */
-	public List<StudyUserDTO> toStudyUserDTOs(final Study study) {
+	public List<StudyUserDTO> toStudyUserDTOs(@Nullable final Study study) {
 		final List<StudyUserDTO> studyUserDTOs = new ArrayList<>();
 
 		if (study != null && study.getId() != 0) {
@@ -73,7 +73,7 @@ public class StudyUserMapper {
 	 * @param user The user to convert.
 	 * @return The mapped StudyUserDTO.
 	 */
-	public StudyUserDTO toStudyUserDTO(final Study study, final RandimiUser user) {
+	public StudyUserDTO toStudyUserDTO(@Nullable final Study study, final RandimiUser user) {
 		if (study != null && study.getId() != 0) {
 			final Set<PermissionType> userPermissions = aclEntryRepository.getPermissionTypesByObjectAndUser(study,
 			                                                                                                 user);
@@ -104,7 +104,7 @@ public class StudyUserMapper {
 		return studyUserDTOs;
 	}
 
-	public Set<PermissionBundle> getPermissionBundlesForUserAndStudy(final Set<PermissionType> userPermissions) {
+	public Set<PermissionBundle> getPermissionBundlesForUserAndStudy(@Nullable final Set<PermissionType> userPermissions) {
 		return userPermissions != null
 		       ? PermissionBundle.getPermissionBundlesForStudy(userPermissions)
 		       : new HashSet<>();
@@ -125,8 +125,8 @@ public class StudyUserMapper {
 		return userPermissionsMap;
 	}
 
-	public Set<PermissionBundle> getPermissionBundlesForUserAndSite(final Set<PermissionType> userStudyPermissions,
-	                                                                final Set<PermissionType> userSitePermissions) {
+	public Set<PermissionBundle> getPermissionBundlesForUserAndSite(@Nullable final Set<PermissionType> userStudyPermissions,
+	                                                                @Nullable final Set<PermissionType> userSitePermissions) {
 		return userStudyPermissions != null && userSitePermissions != null
 		       ? PermissionBundle.getPermissionBundlesForSite(userSitePermissions, userStudyPermissions)
 		       : new HashSet<>();

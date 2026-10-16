@@ -2,6 +2,28 @@
 
 This file records the changes to RandIMI since version 2.0.0 (2023-08-23).
 
+## 2.3.1 (2026-10-16)
+
+### New features
+
+- Added a list containing all subjects of a study. Provides filtering, sorting, and searching through all subjects at a
+  single place. ([#17662](https://bugtracker.uni-muenster.de/issues/17662))
+- Added simulation and analysis scripts for verifying randomization algorithms.
+  ([#18164](https://bugtracker.uni-muenster.de/issues/18164))
+- Added API endpoints for creating, testing, activating, archiving and deleting studies.
+
+### Fixes
+
+- Fixed search placeholder text for site statistics. ([#18069](https://bugtracker.uni-muenster.de/issues/18069))
+- Fixed mail addresses were not allowed to contain uppercase letters.
+  ([#18074](https://bugtracker.uni-muenster.de/issues/18074))
+- Fixed migration for AuditType DEALLOCATE_SUBJECT. ([#18117](https://bugtracker.uni-muenster.de/issues/18117))
+- Fixed race condition during subject randomization that could lead to duplicate order numbers.
+- Fixed allocation probabilities of non-preferred arms in minimization randomization.
+- Fixed allocation probabilities for blocked randomization in studies with unbalanced study arms.
+- Fixed allocation probabilities for cointoss randomization in studies with unbalanced study arms.
+- Fixed identical seeds for sites created at the same time.
+
 ## 2.3.0 (2026-07-31)
 
 ### New features

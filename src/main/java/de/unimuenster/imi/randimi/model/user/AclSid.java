@@ -6,6 +6,7 @@ import de.unimuenster.imi.randimi.model.EntityBase;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -44,7 +45,7 @@ public class AclSid extends EntityBase {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 		if (this == obj) {
 			return true;
 		}

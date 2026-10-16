@@ -1,6 +1,7 @@
 package de.unimuenster.imi.randimi.repository.user;
 
 import de.unimuenster.imi.randimi.model.user.AclClass;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public interface AclClassRepository extends CrudRepository<AclClass, Long> {
 
-	AclClass findFirstByClassNameOrSynonym(String className, String synonym);
+	@Nullable
+	AclClass findFirstByClassNameOrSynonym(@Nullable String className, @Nullable String synonym);
 	
 }

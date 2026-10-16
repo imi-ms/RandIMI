@@ -8,7 +8,6 @@ import de.unimuenster.imi.randimi.model.study.stratum.StratumPartBase;
 import de.unimuenster.imi.randimi.model.subject.Subject;
 import de.unimuenster.imi.randimi.model.subject.SubjectList;
 
-import de.unimuenster.imi.randimi.service.StratumCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,14 +18,11 @@ import java.util.List;
 public class SubjectListMapper {
 
     private final SubjectEntryMapper subjectEntryMapper;
-    private final StratumCodeService stratumCodeService;
     private final StratumPartMapper stratumPartMapper;
 
     @Autowired
-    public SubjectListMapper(final SubjectEntryMapper subjectEntryMapper, final StratumCodeService stratumCodeService,
-                             final StratumPartMapper stratumPartMapper) {
+    public SubjectListMapper(final SubjectEntryMapper subjectEntryMapper, final StratumPartMapper stratumPartMapper) {
         this.subjectEntryMapper = subjectEntryMapper;
-        this.stratumCodeService = stratumCodeService;
         this.stratumPartMapper = stratumPartMapper;
     }
 

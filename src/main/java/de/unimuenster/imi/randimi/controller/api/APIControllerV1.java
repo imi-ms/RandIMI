@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -126,7 +127,7 @@ public class APIControllerV1 {
 	}
 
 	@RequestMapping(value = {"/getStudyStrataNames", "/getStudyParams"},
-	                method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	                method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)")
 	@Operation(summary = "Get a list of all stratum names present in the provided study.",
 	           description = "This method can be used to quickly determine, which strata are present in a study.")
@@ -138,7 +139,7 @@ public class APIControllerV1 {
 	public ResponseEntity<String> getStudyStrataNames(
 			@Parameter(description = "API ID of the study", required = true)
 			@RequestParam(value = "studyId") String studyApiId,
-			@Deprecated Locale locale) {
+			@Deprecated @Nullable Locale locale) {
 		if (locale != null) {
 			LocaleContextHolder.setLocale(locale);
 		}
@@ -183,7 +184,7 @@ public class APIControllerV1 {
 	 * @param studyApiId studyId as {@link String}.
 	 * @return {@link ResponseEntity} with value mapping as described above.
 	 */
-	@RequestMapping(value = {"/getStudyStrataInfo","/getStudyInfo"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@RequestMapping(value = {"/getStudyStrataInfo","/getStudyInfo"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)")
 	@Operation(description = "Get information about the strata (names, types, possible values) present in the provided study.")
 	@ApiResponses(value = {
@@ -203,7 +204,7 @@ public class APIControllerV1 {
 	public ResponseEntity<String> getStudyStrataInfo(
 			@Parameter(description = "API ID of the study", required = true)
 			@RequestParam(value = "studyId") final String studyApiId,
-			@Deprecated Locale locale) {
+			@Deprecated @Nullable Locale locale) {
 		if (locale != null) {
 			LocaleContextHolder.setLocale(locale);
 		}
@@ -263,13 +264,13 @@ public class APIControllerV1 {
 	 */
 	@RequestMapping(value = {"/randomizePatient", "/assignStudyArm"},
 			method = RequestMethod.POST,
-			produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+			produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionSiteApiId(authentication, #randomizationRequest.studyApiId, #randomizationRequest.locationApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).CREATE_SUBJECT)")
 	@Operation(description = "Assign a subject to a study arm.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200",
 			             description = "OK. Response contains the name of the assigned study arm.",
-			             content = @Content(mediaType = MediaType.APPLICATION_JSON_UTF8_VALUE,
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                examples = {@ExampleObject(value = "Intervention")})
 			),
 			@ApiResponse(responseCode = "400",
@@ -307,14 +308,14 @@ public class APIControllerV1 {
 	 * @return On success: Status 200 + gui name of the study arm
 	 * On failure: Error code + error message
 	 */
-	@RequestMapping(value = {"/fetchStudyArm", "/fetchAssignment"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@RequestMapping(value = {"/fetchStudyArm", "/fetchAssignment"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionSiteApiId(authentication, #studyApiId, #location, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_SUBJECT)")
 	@Operation(summary = "Fetch the study arm of an already assigned subject.",
 	           description = "Will return the GUI name of the study arm the subject got assigned to.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200",
 			             description = "OK. Response contains the name of the assigned study arm.",
-			             content = @Content(mediaType = MediaType.APPLICATION_JSON_UTF8_VALUE,
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                examples = {
 					                                @ExampleObject(value = "Intervention")
 			                                })),

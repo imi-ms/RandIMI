@@ -1,24 +1,24 @@
 package de.unimuenster.imi.randimi.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unimuenster.imi.randimi.model.api.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
 @Service
 public class ErrorResponseService {
 
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
-	public ErrorResponseService(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
+	public ErrorResponseService(JsonMapper jsonMapper) {
+		this.jsonMapper = jsonMapper;
 	}
 
 	public ErrorResponse createErrorResponse(final HttpStatusCode status, final WebRequest request,
@@ -59,6 +59,6 @@ public class ErrorResponseService {
 	                          final ErrorResponse errorResponse) throws IOException {
 		response.setStatus(status.value());
 		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-		response.getOutputStream().println(objectMapper.writeValueAsString(errorResponse));
+		response.getOutputStream().println(jsonMapper.writeValueAsString(errorResponse));
 	}
 }

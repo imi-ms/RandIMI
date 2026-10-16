@@ -6,6 +6,7 @@ import de.unimuenster.imi.randimi.repository.user.RandimiUserRepository;
 
 import de.unimuenster.imi.randimi.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,13 +39,17 @@ public class RandimiController {
 	/**
 	 * @param error  Displaces an error message in the login box.
 	 *               Will be set if an invalid username or password has been used.
+	 * @param success Success message to be displayed for other events than logout.
 	 * @param logout Shows a successful logout message in the login box. Will be shown if the logout was successful.
 	 * @return Returns The welcome or startpage.
 	 */
 	@RequestMapping(value = {"/", "/welcome"}, method = RequestMethod.GET)
-	public String getWelcomePage(@RequestParam(value = "error", required = false) String error,
-	                             @ModelAttribute("success") String success,
-	                             @RequestParam(value = "logout", required = false) String logout, Model model) {
+	public String getWelcomePage(
+			@RequestParam(value = "error", required = false) @Nullable String error,
+			@ModelAttribute("success") @Nullable String success,
+			@RequestParam(value = "logout", required = false) @Nullable String logout,
+			Model model
+	) {
 		if (error != null) {
 			final String errorCode = "login.error." + error;
 			model.addAttribute("error",

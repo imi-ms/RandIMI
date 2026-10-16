@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.unimuenster.imi.randimi.model.enumeration.ImbalanceFunction;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * DTO for minimization parameter.
@@ -17,6 +18,7 @@ public class MinimizationParameterDTO {
 	 * ID of the corresponding database entity.
 	 */
 	@JsonIgnore
+	@Nullable
 	private Long id;
 
 	/**

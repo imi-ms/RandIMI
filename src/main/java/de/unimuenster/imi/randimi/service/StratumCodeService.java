@@ -9,7 +9,7 @@ import de.unimuenster.imi.randimi.model.enumeration.StratumType;
 import de.unimuenster.imi.randimi.model.study.Site;
 import de.unimuenster.imi.randimi.model.study.stratum.StratumPartSite;
 import de.unimuenster.imi.randimi.model.subject.SubjectList;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import de.unimuenster.imi.randimi.dto.study.stratum.StratumDTO;

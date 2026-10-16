@@ -4,16 +4,12 @@ import de.unimuenster.imi.randimi.model.EntityBase;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * CLass that holds the pseudonym regex. Consisting of a name, description and 
+ * CLass that holds the pseudonym regex. Consisting of a name, description, and
  * the regex.
  * 
  * @author Tobias Hardt <tobiashardt@uni-muenster.de>
@@ -47,8 +43,7 @@ public class PseudonymRegex extends EntityBase {
 	@Setter
 	private int orderNumber;
 
-	@OneToMany(mappedBy = "pseudonymRegex", orphanRemoval = true, fetch = FetchType.EAGER)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "pseudonymRegex", orphanRemoval = true, fetch = FetchType.EAGER, cascade = {CascadeType.ALL})
 	@Getter
 	private final Set<PseudonymRegexDescription> pseudonymRegexDescriptionList = new HashSet<>();
 

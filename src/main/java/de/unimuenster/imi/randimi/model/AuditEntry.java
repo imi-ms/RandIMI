@@ -11,6 +11,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A model to represent an entry of the audit trail. Includes all necessary
@@ -49,6 +50,7 @@ public class AuditEntry extends EntityBase {
 	@Column(nullable = true)
 	@Getter
 	@Setter
+	@Nullable
 	private String reason;
 
 	@Column(nullable = false)

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,8 +27,8 @@ public class DeleteSubjectDTO {
 	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
 	private long siteId;
 
-	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
-	private long subjectListId;
+	@Nullable
+	private Long subjectListId;
 
 	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
 	private long subjectId;

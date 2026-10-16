@@ -2,7 +2,7 @@ package de.unimuenster.imi.randimi.model.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -34,5 +34,6 @@ public class RandomizePatientRequestBodyV2 {
 	 */
 	@Schema(description = "JSON representation of additional study-specific stratum parameters, eg. sex, age...",
 	        example = "{\"Sex\":\"M\",\"Age\":34}")
-	@Nullable private Map<String, String> studyStrataParams;
+	@Nullable
+	private Map<String, String> studyStrataParams;
 }

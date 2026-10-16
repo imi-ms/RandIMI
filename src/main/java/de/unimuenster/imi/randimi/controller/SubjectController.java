@@ -25,9 +25,11 @@ import de.unimuenster.imi.randimi.repository.subject.SubjectRepository;
 import de.unimuenster.imi.randimi.repository.user.AclEntryRepository;
 import de.unimuenster.imi.randimi.validator.subject.SubjectDTOValidator;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -98,7 +100,7 @@ public class SubjectController {
 	              "AND (#subjectListId == null OR @customPermissionEvaluator.hasPermissionSubjectList(authentication, #subjectListId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).CREATE_SUBJECT))")
 	public String add(
 			@RequestParam(value = "id", required = true) final Long studyId,
-			@RequestParam(value = "subjectListId", required = false) final Long subjectListId,
+			@RequestParam(value = "subjectListId", required = false) @Nullable final Long subjectListId,
 			final Model model,
 			final RedirectAttributes redirectAttributes,
 			@AuthenticationPrincipal final MyUserDetails currentUserDetails
@@ -174,7 +176,7 @@ public class SubjectController {
 	@RequestMapping(value = "/add", method = RequestMethod.POST, params = "action=cancel")
 	@Transactional
 	public String addCancel(
-			@RequestParam(value = "subjectListId", required = false) final Long subjectListId,
+			@RequestParam(value = "subjectListId", required = false) @Nullable final Long subjectListId,
 			@Valid @ModelAttribute("subject") SubjectDTO subjectDTO
 	) {
 		if (subjectListId != null) {
@@ -188,7 +190,7 @@ public class SubjectController {
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionSiteId(authentication, #subjectDTO.studyId, #subjectDTO.siteId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).CREATE_SUBJECT)")
 	@Transactional
 	public String add(@RequestParam String action,
-	                  @RequestParam(value = "subjectListId", required = false) final Long subjectListId,
+	                  @RequestParam(value = "subjectListId", required = false) @Nullable final Long subjectListId,
 	                  @Valid @ModelAttribute("subject") SubjectDTO subjectDTO,
 	                  BindingResult result,
 	                  RedirectAttributes ra) {
@@ -221,7 +223,7 @@ public class SubjectController {
 	}
 
 	@RequestMapping(value = "/remove", method = RequestMethod.POST)
-	@PreAuthorize("@customPermissionEvaluator.hasPermissionSubjectList(authentication, #deleteSubjectDTO.subjectListId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).DELETE_SUBJECT)")
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionSubjectId(authentication, #deleteSubjectDTO.subjectId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).DELETE_SUBJECT)")
 	public String remove(@Valid @ModelAttribute(DELETE_SUBJECT_DTO_KEY) final DeleteSubjectDTO deleteSubjectDTO,
 	                     final BindingResult result,
 	                     final RedirectAttributes ra) {
@@ -243,8 +245,7 @@ public class SubjectController {
 
 		if (subjectOptional.isEmpty()) {
 			messageService.addError(ra, "subjects.error.subjectNotExist");
-			return "redirect:/studies/" + deleteSubjectDTO.getStudyApiId() + "/subject-lists/" +
-			       deleteSubjectDTO.getSubjectListId();
+			return getRedirect(ra, deleteSubjectDTO.getStudyApiId(), deleteSubjectDTO.getSubjectListId());
 		}
 
 		try {
@@ -257,15 +258,16 @@ public class SubjectController {
 			messageService.addError(ra, e);
 		}
 
-		return "redirect:/studies/" + deleteSubjectDTO.getStudyApiId() + "/subject-lists/" +
-		       deleteSubjectDTO.getSubjectListId();
+		return getRedirect(ra, deleteSubjectDTO.getStudyApiId(), deleteSubjectDTO.getSubjectListId());
 	}
 
 	@RequestMapping(value = "/edit-pseudonym", method = RequestMethod.POST)
-	@PreAuthorize("@customPermissionEvaluator.hasPermissionSubjectList(authentication, #editSubjectPseudonymDTO.subjectListId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_SUBJECT)")
-	public String editPseudonym(@Valid @ModelAttribute(EDIT_SUBJECT_PSEUDONYM_DTO_KEY) final EditSubjectPseudonymDTO editSubjectPseudonymDTO,
-	                           final BindingResult result,
-	                           final RedirectAttributes ra) {
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionSubjectId(authentication, #editSubjectPseudonymDTO.subjectId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_SUBJECT)")
+	public String editPseudonym(
+			@Valid @ModelAttribute(EDIT_SUBJECT_PSEUDONYM_DTO_KEY) final EditSubjectPseudonymDTO editSubjectPseudonymDTO,
+			final BindingResult result,
+			final RedirectAttributes ra
+	) {
 		if (result.hasErrors()) {
 			return redirectDueToValidationError(result, ra, "subjects.view.editPseudonym.validate.error",
 			                                    editSubjectPseudonymDTO.getStudyApiId(),
@@ -285,8 +287,7 @@ public class SubjectController {
 
 		if (subjectOptional.isEmpty()) {
 			messageService.addError(ra, "subjects.error.subjectNotExist");
-			return "redirect:/studies/" + editSubjectPseudonymDTO.getStudyApiId() + "/subject-lists/" +
-			       editSubjectPseudonymDTO.getSubjectListId();
+			return getRedirect(ra, editSubjectPseudonymDTO.getStudyApiId(), editSubjectPseudonymDTO.getSubjectListId());
 		}
 
 		try {
@@ -298,18 +299,26 @@ public class SubjectController {
 			messageService.addError(ra, e);
 		}
 
-		return "redirect:/studies/" + editSubjectPseudonymDTO.getStudyApiId() + "/subject-lists/" +
-		       editSubjectPseudonymDTO.getSubjectListId();
+		return getRedirect(ra, editSubjectPseudonymDTO.getStudyApiId(), editSubjectPseudonymDTO.getSubjectListId());
 	}
 
 	private String redirectDueToValidationError(BindingResult result, RedirectAttributes ra, String messageCode,
-	                                            String studyApiId, long subjectListId) {
+	                                            String studyApiId, @Nullable Long subjectListId) {
 		String errorString = messageService.getMessage(messageCode);
 		errorString += " " + result.getAllErrors().get(0).getDefaultMessage();
 		for (int i = 1; i < result.getAllErrors().size(); i++)
 			errorString += ", " + result.getAllErrors().get(i).getDefaultMessage();
 		ra.addFlashAttribute("error", errorString);
-		return "redirect:/studies/" + studyApiId + "/subject-lists/" + subjectListId;
+		return getRedirect(ra, studyApiId, subjectListId);
+	}
+
+	private String getRedirect(RedirectAttributes ra, String studyApiId, @Nullable Long subjectListId) {
+		if (subjectListId == null) {
+			ra.addAttribute("tab", "allSubjects");
+			return "redirect:/studies/" + studyApiId + "/subject-lists";
+		} else {
+			return "redirect:/studies/" + studyApiId + "/subject-lists/" + subjectListId;
+		}
 	}
 
 }

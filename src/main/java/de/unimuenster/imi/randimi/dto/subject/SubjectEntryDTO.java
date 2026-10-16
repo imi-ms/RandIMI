@@ -10,7 +10,7 @@ import de.unimuenster.imi.randimi.model.enumeration.SubjectStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -50,6 +50,7 @@ public class SubjectEntryDTO {
 	@JsonProperty(index = 5)
 	@Getter
 	@Setter
+	@Nullable
 	private Timestamp randomizationTimestamp;
 
 	@Schema(description = "Timestamp of the deletion.", example = "2000-12-24 18:00:00")
@@ -68,6 +69,7 @@ public class SubjectEntryDTO {
 	@JsonProperty(index = 1)
 	@Getter
 	@Setter
+	@Nullable
 	private String pseudonym;
 
 	@Schema(description = "Site of the subject.", example = "Münster")
@@ -94,7 +96,8 @@ public class SubjectEntryDTO {
 	private SubjectStatus status;
 
 	/**
-	 * Strata of the subject for subject list export.
+	 * Strata of the subject.
+	 * Keys and values are the gui names of the strata and their values.
 	 */
 	@JsonIgnore
 	private final Map<String, String> strata = new HashMap<>();
@@ -102,6 +105,15 @@ public class SubjectEntryDTO {
 	@JsonAnyGetter
 	public Map<String, String> getStrata() {
 		return strata;
+	}
+
+	/**
+	 * Checks if the subject is active.
+	 * @return true if the subject is active, false otherwise.
+	 */
+	@JsonIgnore
+	public boolean isActive() {
+		return status == SubjectStatus.ACTIVE;
 	}
 
 }

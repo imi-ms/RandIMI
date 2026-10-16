@@ -21,6 +21,7 @@ public abstract class RandimiException extends Exception {
 	public static final int MISSING_PARAMETER_STRATUM = 1040;
 	public static final int MISSING_PARAMETER_STRATUM_PARAMS = 1045;
 	public static final int MISSING_PARAMETER_SITE_API_ID = 1050;
+	public static final int MISSING_PARAMETER_CHANGE_REASON = 1060;
 
 	public static final int MALFORMED_PARAMETER = 2000;
 	public static final int MALFORMED_PARAMETER_PSEUDONYM_REGEX = 2010;
@@ -29,6 +30,7 @@ public abstract class RandimiException extends Exception {
 
 	public static final int UNSATISFYING_PARAMETER = 3000;
 	public static final int UNSATISFYING_PARAMETER_PSEUDONYM_REGEX_MISMATCH = 3010;
+	public static final int UNSATISFYING_PARAMETER_STUDY_CONFIGURATION = 3020;
 
 	public static final int DUPLICATE_REQUEST = 4000;
 	public static final int DUPLICATE_REQUEST_PSEUDONYM_ALREADY_REGISTERED = 4010;

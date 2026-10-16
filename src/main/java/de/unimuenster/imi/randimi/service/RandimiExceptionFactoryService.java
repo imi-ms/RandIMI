@@ -7,8 +7,17 @@ import de.unimuenster.imi.randimi.model.study.Study;
 import de.unimuenster.imi.randimi.model.study.stratum.Stratum;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
 
 @Service
 public class RandimiExceptionFactoryService {
@@ -37,6 +46,11 @@ public class RandimiExceptionFactoryService {
 	public RandimiException missingParameterStudyId() {
 		return new RandimiException.BadRequest(RandimiException.MISSING_PARAMETER_STUDY_ID,
 		                                       messageService.getMessage("exception.noStudyId"));
+	}
+
+	public RandimiException missingParameterChangeReason() {
+		return new RandimiException.BadRequest(RandimiException.MISSING_PARAMETER_CHANGE_REASON,
+		                                       messageService.getMessage("exception.noChangeReason"));
 	}
 
 	public RandimiException missingParameterJson() {
@@ -88,6 +102,29 @@ public class RandimiExceptionFactoryService {
 		return new RandimiException.BadRequest(RandimiException.UNSATISFYING_PARAMETER_PSEUDONYM_REGEX_MISMATCH,
 		                                       messageService.getMessage("exception.pseudonymRegexError", pseudonym,
 		                                                                 regex));
+	}
+
+	/**
+	 * Creates an exception for an invalid study configuration.
+	 *
+	 * @param errors       The validation errors of the study.
+	 * @param fieldMapping Function to map the field paths of the errors to the paths in the request.
+	 * @return The exception containing the validation errors in its details.
+	 */
+	public RandimiException unsatisfyingParameterStudyConfiguration(final Errors errors,
+	                                                                  final UnaryOperator<String> fieldMapping) {
+		final Map<String, List<String>> validationErrors = new LinkedHashMap<>();
+		for (final ObjectError error : errors.getAllErrors()) {
+			final String field = (error instanceof FieldError fieldError) ? fieldMapping.apply(fieldError.getField())
+			                                                              : error.getObjectName();
+			validationErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(messageService.getMessage(error));
+		}
+
+		final RandimiException exception = new RandimiException.BadRequest(
+				RandimiException.UNSATISFYING_PARAMETER_STUDY_CONFIGURATION,
+				messageService.getMessage("exception.invalidStudyConfiguration"));
+		exception.getDetails().setValidationErrors(validationErrors);
+		return exception;
 	}
 
 	public RandimiException malformedParameterPseudonymRegex() {

@@ -2,8 +2,6 @@ package de.unimuenster.imi.randimi.repository.settings;
 
 import de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage;
 import de.unimuenster.imi.randimi.model.settings.Settings;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -12,60 +10,67 @@ import java.util.Optional;
  * @author Daniel Preciado-Marquez
  */
 @Component
-public class SettingsRepositoryImpl {
+public class SettingsCustomRepositoryImpl implements SettingsCustomRepository {
 
-	SettingsRepository settingsRepository;
+	private final SettingsCrudRepository settingsCrudRepository;
 
-	@Autowired
-	public void setSettingsRepository(@Lazy final SettingsRepository settingsRepository) {
-		this.settingsRepository = settingsRepository;
+	public SettingsCustomRepositoryImpl(final SettingsCrudRepository settingsCrudRepository) {
+		this.settingsCrudRepository = settingsCrudRepository;
 	}
 
+	@Override
 	public Settings getCurrentSettings() {
-		Optional<SettingsRepository.SettingsId> settingsId = settingsRepository.findFirst();
-		if (settingsId.isEmpty()) {
-			return new Settings();
-		}
-		return settingsRepository.findById(settingsId.get().getId()).get();
+		return settingsCrudRepository.findFirstByOrderByIdAsc().orElseGet(Settings::new);
 	}
 
+	@Override
 	public SupportedLanguage getDefaultLanguage() {
 		return getCurrentSettings().getDefaultLanguage();
 	}
 
+	@Override
 	public String getMailHost() {
 		return getCurrentSettings().getMailHost();
 	}
 
+	@Override
 	public int getMailPort() {
 		return getCurrentSettings().getMailPort();
 	}
 
+	@Override
 	public Boolean getMailTLS() {
 		return getCurrentSettings().isMailTLS();
 	}
 
+	@Override
 	public Boolean getMailSMTPAuth() {
 		return getCurrentSettings().isMailSMTPAuth();
 	}
 
+	@Override
 	public String getMailUsername() {
 		return getCurrentSettings().getMailUsername();
 	}
 
+	@Override
 	public String getMailPassword() {
 		return getCurrentSettings().getMailPassword();
 	}
 
+	@Override
 	public String getMailSender() {
 		return getCurrentSettings().getMailSender();
 	}
 
+	@Override
 	public String getSupportMail() {
 		return getCurrentSettings().getSupportMail();
 	}
 
+	@Override
 	public String getSupportPhone() {
 		return getCurrentSettings().getSupportPhone();
 	}
+
 }

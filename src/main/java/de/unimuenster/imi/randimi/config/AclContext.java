@@ -17,7 +17,7 @@ import org.springframework.security.acls.model.AclCache;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
+import org.springframework.security.web.access.expression.DefaultHttpSecurityExpressionHandler;
 
 import javax.sql.DataSource;
 
@@ -54,12 +54,11 @@ public class AclContext {
 	}
 
 	@Bean
-	public DefaultWebSecurityExpressionHandler webExpressionHandler(CustomPermissionEvaluator customPermissionEvaluator) {
-		return new DefaultWebSecurityExpressionHandler() {
-			{
-				setPermissionEvaluator(customPermissionEvaluator);
-			}
-		};
+	public DefaultHttpSecurityExpressionHandler webExpressionHandler(CustomPermissionEvaluator customPermissionEvaluator) {
+		final var expressionHandler = new DefaultHttpSecurityExpressionHandler();
+		expressionHandler.setPermissionEvaluator(customPermissionEvaluator);
+		expressionHandler.setApplicationContext(applicationContext);
+		return expressionHandler;
 	}
 
 	@Bean

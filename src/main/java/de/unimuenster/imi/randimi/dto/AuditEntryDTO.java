@@ -6,6 +6,7 @@ import de.unimuenster.imi.randimi.model.enumeration.AuditType;
 import java.sql.Timestamp;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -31,6 +32,7 @@ public class AuditEntryDTO {
 	
 	@Getter
 	@Setter
+	@Nullable
 	private String reason;
 	
 	@Getter

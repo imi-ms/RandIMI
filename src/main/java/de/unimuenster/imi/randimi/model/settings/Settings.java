@@ -6,8 +6,6 @@ import de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -97,9 +95,8 @@ public class Settings extends EntityBase {
 	/**
 	 * List of study arms associated with this study.
 	 */
-	@OneToMany(mappedBy = "settings", orphanRemoval = true, fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "settings", orphanRemoval = true, fetch = FetchType.EAGER, cascade = {CascadeType.ALL})
 	@OrderBy("orderNumber")
-	@Cascade(CascadeType.ALL)
 	@Getter
 	private final List<PseudonymRegex> pseudonymRegexList = new ArrayList<>();
 
@@ -187,8 +184,7 @@ public class Settings extends EntityBase {
 	/**
 	 * List of study arms associated with this study.
 	 */
-	@OneToMany(mappedBy = "settings", orphanRemoval = true, fetch = FetchType.EAGER)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "settings", orphanRemoval = true, fetch = FetchType.EAGER, cascade = {CascadeType.ALL})
 	@Getter
 	private final Set<FooterMessageSettings> footerMessageSettingsList = new HashSet<>();
 

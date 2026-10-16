@@ -11,6 +11,7 @@ import de.unimuenster.imi.randimi.model.api.StudyResource;
 import de.unimuenster.imi.randimi.model.enumeration.RandomizationAlgorithm;
 import de.unimuenster.imi.randimi.model.enumeration.StratumType;
 import de.unimuenster.imi.randimi.model.study.stratum.StratumPartBase;
+import de.unimuenster.imi.randimi.service.RandomizationService;
 import de.unimuenster.imi.randimi.service.StratumCodeService;
 import de.unimuenster.imi.randimi.dto.study.SiteDTO;
 import de.unimuenster.imi.randimi.dto.study.StudyArmDTO;
@@ -35,11 +36,12 @@ public class StudyMapper {
 	final SubjectListMapper randomizationListMapper;
 	final SiteMapper siteMapper;
 	final StratumCodeService stratumCodeService;
+	final RandomizationService randomizationService;
 
 	public StudyMapper(MinimizationParameterMapper minimizationParameterMapper, NamesMapper namesMapper,
 	                   StudyArmMapper studyArmMapper, StratumMapper stratumMapper,
 	                   SubjectListMapper randomizationListMapper, SiteMapper siteMapper,
-	                   StratumCodeService stratumCodeService) {
+	                   StratumCodeService stratumCodeService, RandomizationService randomizationService) {
 		this.minimizationParameterMapper = minimizationParameterMapper;
 		this.namesMapper = namesMapper;
 		this.studyArmMapper = studyArmMapper;
@@ -47,6 +49,7 @@ public class StudyMapper {
 		this.randomizationListMapper = randomizationListMapper;
 		this.siteMapper = siteMapper;
 		this.stratumCodeService = stratumCodeService;
+		this.randomizationService = randomizationService;
 	}
 
 	/**
@@ -137,7 +140,12 @@ public class StudyMapper {
 		// Only set these parameters if a study is not activated, yet
 		// This ensures that we don't overwrite "write protected" values in activated studies
 		if (!study.isActive()) {
-			study.setRandomizationAlgorithm(dto.getRandomizationAlgorithm());
+			// New studies and studies switching the algorithm use its latest version, while existing studies keep theirs
+			if (study.getRandomizationAlgorithm() != dto.getRandomizationAlgorithm()) {
+				study.setRandomizationAlgorithm(dto.getRandomizationAlgorithm());
+				study.setRandomizationAlgorithmVersion(
+						randomizationService.getLatestAlgorithmVersion(dto.getRandomizationAlgorithm()));
+			}
 			study.setPreGenerateSubjectList(dto.getPreGenerateSubjectList());
 			study.setMinBlocksize(dto.getMinBlocksize());
 			study.setMaxBlocksize(dto.getMaxBlocksize());

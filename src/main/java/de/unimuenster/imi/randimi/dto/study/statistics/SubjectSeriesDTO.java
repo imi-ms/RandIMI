@@ -3,7 +3,7 @@ package de.unimuenster.imi.randimi.dto.study.statistics;
 import de.unimuenster.imi.randimi.dto.study.SiteDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.util.Map;

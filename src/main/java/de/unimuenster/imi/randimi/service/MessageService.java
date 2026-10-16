@@ -5,6 +5,7 @@ import de.unimuenster.imi.randimi.model.enumeration.StudyStatus;
 import de.unimuenster.imi.randimi.model.study.Study;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
@@ -90,6 +91,17 @@ public class MessageService {
 
 	public String getMessage(final String messageCode, final Object... objects) {
 		return messageSource.getMessage(messageCode, objects, getLocale());
+	}
+
+	/**
+	 * Resolves the message of the given resolvable, e.g. a validation error.
+	 * Falls back to the default message of the resolvable.
+	 *
+	 * @param resolvable The resolvable to get the message for.
+	 * @return The resolved message.
+	 */
+	public String getMessage(final MessageSourceResolvable resolvable) {
+		return messageSource.getMessage(resolvable, getLocale());
 	}
 
 	private Locale getLocale() {

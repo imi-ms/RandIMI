@@ -1,11 +1,9 @@
 package de.unimuenster.imi.randimi.mapping.user;
 
 import de.unimuenster.imi.randimi.dto.user.AccountDetailsDTO;
-import de.unimuenster.imi.randimi.model.user.MyUserDetails;
 import de.unimuenster.imi.randimi.model.user.RandimiUser;
 import de.unimuenster.imi.randimi.repository.user.RandimiUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,5 +1,6 @@
 package de.unimuenster.imi.randimi.controller.helper;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,7 +19,7 @@ public class LocaleHelper {
             new Locale("en", "GB")
     ));
 
-    public static Locale getLocale(Locale locale, String acceptLanguage) {
+    public static Locale getLocale(@Nullable Locale locale, @Nullable String acceptLanguage) {
         if (locale != null) {
             return locale;
         }

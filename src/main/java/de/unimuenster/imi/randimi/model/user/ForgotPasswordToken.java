@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
 
 /**
  * Database representation of the forgot password token.

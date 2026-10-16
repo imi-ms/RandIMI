@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Response in case of an error.
@@ -66,6 +64,7 @@ public class ErrorResponse {
 	 */
 	@Schema(description = "Message of the exception.", example = "2024-07-02 11:42:27",
 	        requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@Nullable
 	private String errors;
 
 	/**
@@ -80,5 +79,6 @@ public class ErrorResponse {
 	 */
 	@Schema(description = "Code describing the error.", example = "5017",
 	        requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@Nullable
 	private Integer errorCode;
 }

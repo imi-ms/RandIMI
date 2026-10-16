@@ -5,13 +5,14 @@ import de.unimuenster.imi.randimi.model.SelectInputOption;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @EqualsAndHashCode(callSuper = true)
 @Setter @Getter
 public class SiteDTO extends NamesDTO implements SelectInputOption {
 
     @JsonIgnore
+    @Nullable
     private Long id = 0L;
 
     private Integer orderNumber = 0;
@@ -19,11 +20,13 @@ public class SiteDTO extends NamesDTO implements SelectInputOption {
     @JsonIgnore
     private Boolean empty = true;
 
+    @Nullable
     private String pseudonymRegex;
 
     @Nullable
     private Integer capacity;
 
+    @Nullable
     private Long seed;
 
     /**

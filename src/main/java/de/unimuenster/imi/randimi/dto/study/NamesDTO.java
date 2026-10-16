@@ -5,13 +5,17 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 @EqualsAndHashCode
 @ToString
 @Getter @Setter
 public class NamesDTO {
+	@Nullable
 	protected String guiName;
+	@Nullable
 	private Boolean useApiId = false;
+	@Nullable
 	protected String apiId;
 
 	@JsonIgnore

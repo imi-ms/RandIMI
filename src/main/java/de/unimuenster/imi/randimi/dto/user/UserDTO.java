@@ -3,7 +3,7 @@ package de.unimuenster.imi.randimi.dto.user;
 import de.unimuenster.imi.randimi.model.enumeration.UserEditStatus;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

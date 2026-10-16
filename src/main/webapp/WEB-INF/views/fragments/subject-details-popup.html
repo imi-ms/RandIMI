@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Subject details popup</title>
+</head>
+<body>
+
+<th:block th:fragment="subject_details_popup">
+	<div th:replace="~{fragments/popup.html :: common_popup(popupId='detailsPopup', popupTitleMessageCode='subjects.view.showDetails.title', bodyContent=~{::#showDetailsPopupBody}, footerContent=~{::#showDetailsPopupFooter})}">
+		<div id="showDetailsPopupBody">
+			<table id="auditEntriesTable" class="randimi-vertical-table w-100">
+				<tr>
+					<th th:text="#{subjects.view.index}"></th>
+					<td id="subjectDetailsIndex"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.pseudonym}"></th>
+					<td id="subjectDetailsPseudonym"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.location}"></th>
+					<td id="subjectDetailsLocation"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.studyArm}"></th>
+					<td id="subjectDetailsStudyArm"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.status}"></th>
+					<td id="subjectDetailsStatus"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.randomizationTimestamp}"></th>
+					<td id="subjectDetailsRandomizationTimestamp"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.deletionTimestamp}"></th>
+					<td id="subjectDetailsDeletionTimestamp"></td>
+				</tr>
+				<tr>
+					<th th:text="#{subjects.view.releaseTimestamp}"></th>
+					<td id="subjectDetailsReleaseTimestamp"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="showDetailsPopupFooter">
+			<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true" th:text="#{button.close}">Close</button>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+    /**
+     * Updates the details popup.
+     * @param {HTMLElement} detailsButton The pressed button.
+     */
+    function updateDetailsPopup(detailsButton) {
+        const row = detailsButton.closest('tr');
+
+        const index = row.querySelector('.c-index');
+        document.getElementById('subjectDetailsIndex').innerText = index ? index.innerText : '';
+        const pseudonym = row.querySelector('.c-pseudonym');
+        document.getElementById('subjectDetailsPseudonym').innerText = pseudonym ? pseudonym.innerText : '';
+        const location = row.querySelector('.c-location');
+        document.getElementById('subjectDetailsLocation').innerText = location ? location.innerText : '';
+        const studyArmName = row.querySelector('.c-study-arm-name');
+        document.getElementById('subjectDetailsStudyArm').innerText = studyArmName ? studyArmName.innerText : '';
+        const status = row.querySelector('.c-status');
+        document.getElementById('subjectDetailsStatus').innerHTML = status ? status.innerHTML : '';
+        const randomizationTimestamp = row.querySelector('.c-randomization-timestamp');
+        document.getElementById('subjectDetailsRandomizationTimestamp').innerText = randomizationTimestamp ? randomizationTimestamp.innerText : '';
+        const deletionTimestamp = row.querySelector('.c-deletion-timestamp');
+        document.getElementById('subjectDetailsDeletionTimestamp').innerText = deletionTimestamp ? deletionTimestamp.innerText : '';
+        const releaseTimestamp = row.querySelector('.c-release-timestamp');
+        document.getElementById('subjectDetailsReleaseTimestamp').innerText = releaseTimestamp ? releaseTimestamp.innerText : '';
+    }
+	</script>
+</th:block>
+
+
+
+</body>
+</html>

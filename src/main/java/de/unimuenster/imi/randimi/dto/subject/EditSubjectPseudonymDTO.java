@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,10 +26,11 @@ public class EditSubjectPseudonymDTO {
 	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
 	private long studyId;
 
+	@NotBlank(message = "{validator.general.mustNotBeEmpty}")
 	private String studyApiId;
 
-	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
-	private long subjectListId;
+	@Nullable
+	private Long subjectListId;
 
 	@Min(value = 1, message = "{validator.general.mustNotBeZero}")
 	private long subjectId;

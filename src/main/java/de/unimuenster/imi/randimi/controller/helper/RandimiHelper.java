@@ -1,5 +1,6 @@
 package de.unimuenster.imi.randimi.controller.helper;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -9,6 +10,20 @@ import java.util.Random;
  */
 public class RandimiHelper {
 	
+	private static final SecureRandom SEED_GENERATOR = new SecureRandom();
+
+	/**
+	 * Generates a new seed for the randomization of a site.
+	 * <p>
+	 * The seed is drawn from a secure random generator, so seeds cannot be predicted and sites created at the same
+	 * time get different seeds.
+	 *
+	 * @return A new seed.
+	 */
+	public static long generateSeed() {
+		return SEED_GENERATOR.nextLong();
+	}
+
 	/**
 	 * Returns a random object with the given seed and a given number of calls
 	 * already done.

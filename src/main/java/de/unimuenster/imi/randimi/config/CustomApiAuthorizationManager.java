@@ -3,9 +3,10 @@ package de.unimuenster.imi.randimi.config;
 import de.unimuenster.imi.randimi.model.enumeration.UserRoles;
 import de.unimuenster.imi.randimi.model.user.MyUserDetails;
 import de.unimuenster.imi.randimi.model.user.RandimiUser;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,10 @@ import java.util.function.Supplier;
 @Component
 public class CustomApiAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-	@Nullable @Override
-	public AuthorizationDecision check(final Supplier<Authentication> authentication,
-	                                   final RequestAuthorizationContext object) {
+	@Nullable
+	@Override
+	public AuthorizationResult authorize(final Supplier<? extends @Nullable Authentication> authentication,
+	                                     final RequestAuthorizationContext object) {
 		if (authentication.get().getPrincipal() instanceof String) {
 			// User is not logged in
 			return null;

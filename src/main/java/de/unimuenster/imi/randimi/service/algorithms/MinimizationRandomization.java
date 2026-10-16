@@ -49,6 +49,11 @@ public class MinimizationRandomization extends AbstractRandomization {
 		return RandomizationAlgorithm.MINIMIZATION;
 	}
 
+	@Override
+	public int getVersion() {
+		return 1;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -231,7 +236,7 @@ public class MinimizationRandomization extends AbstractRandomization {
 	 * @param imbalances The imbalances for each study arm.
 	 * @return The probabilities.
 	 */
-	private List<Float> calculateProbabilities(final Study study, final List<Float> imbalances) {
+	protected List<Float> calculateProbabilities(final Study study, final List<Float> imbalances) {
 		final List<Float> probabilities = new ArrayList<>(imbalances.size());
 		final float minImbalance = Collections.min(imbalances);
 		int numberWithMinImbalance = 0;
@@ -252,7 +257,8 @@ public class MinimizationRandomization extends AbstractRandomization {
 			if (imbalances.get(studyArmIndex) == minImbalance) {
 				probabilities.add(p * (study.getStudyArms().get(studyArmIndex).getRatio()) / studyArmRatioPreferred);
 			} else {
-				probabilities.add(1.0f - p / (n - numberWithMinImbalance));
+				// the remaining probability is split equally between the other study arms
+				probabilities.add((1.0f - p) / (n - numberWithMinImbalance));
 			}
 		}
 

@@ -37,6 +37,16 @@ public class UserDtoValidatorTest extends ValidatorTestBase {
 	}
 
 	@Test
+	public void validInvitationUserWithUpperCaseEmail() {
+		UserDTO user = getValidInvitationUser();
+		user.setEMail("Email@Mail.DE");
+
+		validator.validate(user, errors);
+
+		verify(errors, never()).rejectValue(anyString(), anyString(), anyString());
+	}
+
+	@Test
 	public void validUsernameContainsAt() {
 		UserDTO user = getValidInvitationUser();
 		user.setUsername("user@name");

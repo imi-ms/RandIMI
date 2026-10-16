@@ -3,6 +3,7 @@ package de.unimuenster.imi.randimi.controller.helper;
 import de.unimuenster.imi.randimi.model.user.MyUserDetails;
 import de.unimuenster.imi.randimi.model.user.RandimiUser;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -17,7 +18,8 @@ public class UtilityAdvice {
 	}
 
 	@ModelAttribute("authenticatedUser")
-	public RandimiUser getAuthenticatedUser(final Authentication authentication) {
+	@Nullable
+	public RandimiUser getAuthenticatedUser(@Nullable final Authentication authentication) {
 		if (authentication == null) {
 			return null;
 		}
@@ -51,7 +53,6 @@ public class UtilityAdvice {
 
 	@ModelAttribute("path")
 	public String getPath(final HttpServletRequest request) {
-		var a = request.getRequestURI().substring(request.getContextPath().length());
 		return request.getRequestURI().substring(request.getContextPath().length());
 	}
 }

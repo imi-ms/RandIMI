@@ -9,6 +9,7 @@ import de.unimuenster.imi.randimi.model.study.stratum.Stratum;
 import de.unimuenster.imi.randimi.model.study.stratum.StratumPartBase;
 import de.unimuenster.imi.randimi.model.study.stratum.StratumPartEnumeration;
 import de.unimuenster.imi.randimi.model.study.stratum.StratumPartSite;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -117,7 +118,7 @@ public class StratumMapper {
      * @param stratum The {@link Stratum} object to convert.
      * @return The converted {@link StrataInfoResponseV2.Definition} object.
      */
-    public StrataInfoResponseV2.Definition toStratumResource(final Stratum stratum) {
+    public StrataInfoResponseV2.@Nullable Definition toStratumResource(final Stratum stratum) {
         switch (stratum.getStratumType()) {
             case ENUM: {
                 List<StrataInfoResponseV2.FactorValue> values = new ArrayList<>();

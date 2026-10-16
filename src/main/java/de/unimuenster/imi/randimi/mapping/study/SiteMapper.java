@@ -1,5 +1,6 @@
 package de.unimuenster.imi.randimi.mapping.study;
 
+import de.unimuenster.imi.randimi.controller.helper.RandimiHelper;
 import de.unimuenster.imi.randimi.dto.study.SiteDTO;
 import de.unimuenster.imi.randimi.model.api.SiteResource;
 import de.unimuenster.imi.randimi.model.study.Site;
@@ -68,7 +69,7 @@ public class SiteMapper {
         if (dto.getSeed() != null) {
             site.setSeed(dto.getSeed());
         } else {
-            site.setSeed(System.currentTimeMillis());
+            site.setSeed(RandimiHelper.generateSeed());
         }
         return site;
     }

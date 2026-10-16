@@ -200,6 +200,63 @@ public class MinimizationRandomizationTest extends RandimiIntegrationTest {
 		verify(errors, only()).rejectValue("minimizationParameter.imbalanceFunction", "validator.general.mustNotBeNull");
 	}
 
+	//===============================
+	//--- calculateProbabilities ---
+	//===============================
+
+	@Test
+	public void calculateProbabilitiesOnePreferredStudyArm() {
+		addStudyArmC();
+
+		final List<Float> probabilities = minimization.calculateProbabilities(study, List.of(2.0f, 2.0f, 1.0f));
+
+		assertProbabilities(List.of(0.15f, 0.15f, 0.7f), probabilities);
+	}
+
+	@Test
+	public void calculateProbabilitiesTwoPreferredStudyArms() {
+		addStudyArmC();
+
+		final List<Float> probabilities = minimization.calculateProbabilities(study, List.of(1.0f, 2.0f, 1.0f));
+
+		assertProbabilities(List.of(0.35f, 0.3f, 0.35f), probabilities);
+	}
+
+	@Test
+	public void calculateProbabilitiesTwoPreferredStudyArmsRatio() {
+		addStudyArmC();
+		study.getStudyArms().get(0).setRatio(3);
+
+		final List<Float> probabilities = minimization.calculateProbabilities(study, List.of(1.0f, 2.0f, 1.0f));
+
+		assertProbabilities(List.of(0.525f, 0.3f, 0.175f), probabilities);
+	}
+
+	@Test
+	public void calculateProbabilitiesAllPreferred() {
+		addStudyArmC();
+		study.getStudyArms().get(0).setRatio(2);
+
+		final List<Float> probabilities = minimization.calculateProbabilities(study, List.of(1.0f, 1.0f, 1.0f));
+
+		assertProbabilities(List.of(0.5f, 0.25f, 0.25f), probabilities);
+	}
+
+	private void addStudyArmC() {
+		final StudyArm studyArmC = new StudyArm();
+		studyArmC.setId(3L);
+		studyArmC.setRatio(1);
+		study.addStudyArm(studyArmC);
+	}
+
+	private void assertProbabilities(final List<Float> expected, final List<Float> actual) {
+		assertEquals(expected.size(), actual.size(), "Unexpected number of probabilities!");
+		for (int i = 0; i < expected.size(); i++) {
+			assertEquals(expected.get(i), actual.get(i), 1e-6f, "Unexpected probability of study arm " + i + "!");
+		}
+		assertEquals(1.0f, actual.stream().reduce(0.0f, Float::sum), 1e-6f, "Probabilities do not sum to 1!");
+	}
+
 	//=========================
 	//--- getRandomStudyArm ---
 	//=========================

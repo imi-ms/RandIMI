@@ -10,8 +10,6 @@ import de.unimuenster.imi.randimi.model.study.stratum.StratumPartBase;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 
 /**
  * Database representation of each subject list.
@@ -50,9 +48,8 @@ public class SubjectList extends EntityBase {
 	/**
 	 * List of each randomization entry.
 	 */
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "subjectList", orphanRemoval = true)
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "subjectList", orphanRemoval = true, cascade = {CascadeType.ALL})
 	@OrderBy("orderNumber")
-	@Cascade(CascadeType.ALL)
 	private final List<Subject> subjects = new ArrayList<>();
 
 	/**

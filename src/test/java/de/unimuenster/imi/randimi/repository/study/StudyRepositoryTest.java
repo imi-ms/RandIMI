@@ -43,18 +43,18 @@ public class StudyRepositoryTest extends RepositoryTestBase {
 
 	@Test
 	public void revokeAndGrandRightTest() {
-		AclEntry elementUserAccess = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid,
+		AclEntry elementUserAccess = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid,
 		                                                                                            PermissionType.UPDATE_STUDY);
 		assertNull(elementUserAccess, "Permission already exists!");
 
 		studyRepository.grantRight(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
 
-		elementUserAccess = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
+		elementUserAccess = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
 		assertNotNull(elementUserAccess, "Right not granted!");
 
 		studyRepository.revokeRight(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
 
-		elementUserAccess = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
+		elementUserAccess = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy, adminAclSid, PermissionType.UPDATE_STUDY);
 		assertNull(elementUserAccess, "Right not revoked!");
 	}
 

@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ import java.util.List;
 public class StudyDTO extends NamesDTO {
 
 	@JsonIgnore
+	@Nullable
 	private Long id;
 
 	private String description;

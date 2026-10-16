@@ -15,13 +15,13 @@ import de.unimuenster.imi.randimi.repository.study.StudyRepository;
 import de.unimuenster.imi.randimi.repository.user.RandimiUserRepository;
 import de.unimuenster.imi.randimi.service.RandomizationService;
 import de.unimuenster.imi.randimi.service.StudyService;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.lang.Nullable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 

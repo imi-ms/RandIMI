@@ -13,7 +13,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Database representation of each randomization entry.
@@ -69,6 +69,7 @@ public class Subject extends EntityBase {
 	/**
 	 * Timestamp of the randomization.
 	 */
+	@Nullable
 	private Timestamp randomizationTimestamp = null;
 
 	/**
@@ -95,9 +96,11 @@ public class Subject extends EntityBase {
 	 * successfully assigned.
 	 */
 	@Column(nullable = true)
+	@Nullable
 	private String pseudonym = null;
 
 	@ManyToOne(optional = true)
+	@Nullable
 	private Site site;
 
 	public void setAssignedTo(Site site, String pseudo) {
@@ -118,7 +121,7 @@ public class Subject extends EntityBase {
 	}
 
 	@Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) {
             return true;
         }

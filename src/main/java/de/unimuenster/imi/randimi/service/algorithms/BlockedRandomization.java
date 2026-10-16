@@ -24,6 +24,9 @@ import org.springframework.validation.Errors;
 
 /**
  * Implementation of a blocked randomization algorithm.
+ * <p>
+ * Version 2: The study arm is drawn weighted by the remaining assignments in the current block.
+ * See {@link BlockedRandomizationV1} for the previous version.
  *
  * @author Tobias Brix
  * @author Tobias Hardt
@@ -36,7 +39,7 @@ public class BlockedRandomization extends AbstractRandomization {
 
 	private final SubjectRepository subjectRepository;
 
-	private final RandomService randomService;
+	protected final RandomService randomService;
 	private final StudyUtilityService studyUtilityService;
 
 	@Autowired
@@ -53,6 +56,11 @@ public class BlockedRandomization extends AbstractRandomization {
 	@Override
 	public RandomizationAlgorithm getAlgorithm() {
 		return RandomizationAlgorithm.BLOCKED;
+	}
+
+	@Override
+	public int getVersion() {
+		return 2;
 	}
 
 	@Override
@@ -164,18 +172,36 @@ public class BlockedRandomization extends AbstractRandomization {
 			createNewBlock(site, subjectList);
 
 		Integer[] remainingAssignments = subjectList.getRemainingAssignments();
-		List<Integer> remainingAssignmentIndices = new ArrayList<Integer>();
-		for (int i = 0; i < remainingAssignments.length; i++)
-			if (remainingAssignments[i] != 0)
-				remainingAssignmentIndices.add(i);
-
-		int remainingAssignmentIndex = randomService.nextRandomInt(site, subjectList,
-		                                                           remainingAssignmentIndices.size());
-		int studyArmIndex = remainingAssignmentIndices.get(remainingAssignmentIndex);
+		int studyArmIndex = drawStudyArmIndex(site, subjectList, remainingAssignments);
 
 		remainingAssignments[studyArmIndex] -= 1;
 
 		return site.getStudy().getStudyArms().get(studyArmIndex);
+	}
+
+	/**
+	 * Draws the index of the study arm for the next subject of the current block.
+	 * Draws one of the remaining assignments of the block, so each study arm is weighted by its remaining
+	 * assignments and every permutation of the block is equally likely.
+	 *
+	 * @param site                 Site containing the seed to use.
+	 * @param subjectList          The list the subject will be assigned to.
+	 * @param remainingAssignments Remaining assignments of each study arm in the current block.
+	 * @return Index of the drawn study arm.
+	 */
+	protected int drawStudyArmIndex(Site site, SubjectList subjectList, Integer[] remainingAssignments) {
+		int numberRemainingAssignments = 0;
+		for (final Integer remaining : remainingAssignments)
+			numberRemainingAssignments += remaining;
+
+		int remainingAssignmentIndex = randomService.nextRandomInt(site, subjectList, numberRemainingAssignments);
+		int studyArmIndex = 0;
+		while (remainingAssignmentIndex >= remainingAssignments[studyArmIndex]) {
+			remainingAssignmentIndex -= remainingAssignments[studyArmIndex];
+			studyArmIndex++;
+		}
+
+		return studyArmIndex;
 	}
 
 	private boolean isCurrentBlockFull(SubjectList subjectList) {

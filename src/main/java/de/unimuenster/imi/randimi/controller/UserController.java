@@ -21,8 +21,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -88,7 +88,7 @@ public class UserController {
 
 	@RequestMapping(value = "/invite", method = RequestMethod.GET)
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionUser(authentication, #userId)")
-	public String getInvitationPage(@RequestParam(value = "id", required = false) Long userId,
+	public String getInvitationPage(@RequestParam(value = "id", required = false) @Nullable Long userId,
 	                                Model model,
 	                                HttpServletRequest request) {
 		// Check if redirected
@@ -306,8 +306,10 @@ public class UserController {
 	}
 
 	@RequestMapping(value = "/activate", method = RequestMethod.GET)
-	public String getActivationPage(@RequestParam(value = INVITATION_TOKEN_KEY, required = false) String token,
-	                                Model model) {
+	public String getActivationPage(
+			@RequestParam(value = INVITATION_TOKEN_KEY, required = false) @Nullable String token,
+			Model model
+	) {
 		if (!model.containsAttribute(USER_KEY)) {
 
 			//enables tokenless requests to show proper error page

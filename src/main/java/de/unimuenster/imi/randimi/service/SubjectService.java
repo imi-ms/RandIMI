@@ -72,8 +72,7 @@ public class SubjectService {
 				SubjectList subjectList = subject.getSubjectList();
 				randomizationService.preGenerateSubject(subjectList, subject.getStudyArm());
 			} else {
-				Randomization randomization = randomizationService.getAlgorithmImplementation(
-						study.getRandomizationAlgorithm());
+				Randomization randomization = randomizationService.getAlgorithmImplementation(study);
 				randomization.onSubjectRelease(subject);
 			}
 

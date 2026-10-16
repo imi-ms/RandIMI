@@ -9,15 +9,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -37,8 +36,7 @@ public class RandimiUser extends EntityBase {
 	private String username;
 
 	@JoinColumn(name = "sid", unique = true, nullable = false)
-	@OneToOne
-	@Cascade(CascadeType.ALL)
+	@OneToOne(cascade = CascadeType.ALL)
 	@Getter @Setter
 	private AclSid aclSid;
 
@@ -74,15 +72,14 @@ public class RandimiUser extends EntityBase {
 	 * E-Mail
 	 */
 	@Column(nullable = false)
-	@Getter @Setter
+	@Getter
 	private String eMail;
 
 
 	/**
 	 * List of roles associated with this user.
 	 */
-	@OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.EAGER)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.EAGER, cascade = {CascadeType.ALL})
 	@Getter
 	private final List<UserRole> userRoles = new ArrayList<>();
 
@@ -170,14 +167,14 @@ public class RandimiUser extends EntityBase {
 	@Getter
 	private final Set<RandimiUser> invitedUsers = new HashSet<>();
 
-	@OneToOne(mappedBy = "randimiUser", orphanRemoval = true)
-	@Cascade(CascadeType.ALL)
+	@OneToOne(mappedBy = "randimiUser", orphanRemoval = true, cascade = {CascadeType.ALL})
 	@Getter
+	@Nullable
 	private ForgotPasswordToken forgotPasswordToken;
 
-	@ManyToMany(targetEntity = Study.class, mappedBy = "assignedUsers", fetch = FetchType.LAZY)
+	@ManyToMany(targetEntity = Study.class, mappedBy = "assignedUsers", fetch = FetchType.LAZY,
+	            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Getter
-	@Cascade({CascadeType.PERSIST, CascadeType.MERGE})
 	private final Set<Study> assignedStudies = new HashSet<>();
 
 	//-------------------------------------------------------------------------
@@ -224,7 +221,7 @@ public class RandimiUser extends EntityBase {
 		this.enabled = enabled;
 		this.firstName = firstName;
 		this.lastName = lastName;
-		this.eMail = eMail;
+		this.setEMail(eMail);
 		this.userRoles.clear();
 		for (String userRole : userRoles) {
 			this.addUserRole(new UserRole(UserRoles.fromString(userRole)));
@@ -232,7 +229,7 @@ public class RandimiUser extends EntityBase {
 		this.gravatarEnabled = gravatar;
 	}
 
-	public void setForgotPasswordToken(final ForgotPasswordToken newToken) {
+	public void setForgotPasswordToken(@Nullable final ForgotPasswordToken newToken) {
 		final ForgotPasswordToken oldUser = this.forgotPasswordToken;
 		this.forgotPasswordToken = newToken;
 		if (oldUser != null && oldUser.getRandimiUser() == this) {
@@ -260,6 +257,10 @@ public class RandimiUser extends EntityBase {
 
 	public void setUsername(String username) {
 		this.username = username.toUpperCase();
+	}
+
+	public void setEMail(String eMail) {
+		this.eMail = eMail == null ? null : eMail.toLowerCase(Locale.ROOT);
 	}
 
 	public Boolean hasRole(UserRoles checkUserRole) {
@@ -308,7 +309,7 @@ public class RandimiUser extends EntityBase {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 		if (this == obj) {
 			return true;
 		}

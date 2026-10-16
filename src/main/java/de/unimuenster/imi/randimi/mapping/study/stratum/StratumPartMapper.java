@@ -4,6 +4,7 @@ import de.unimuenster.imi.randimi.dto.study.stratum.StratumPartBaseDTO;
 import de.unimuenster.imi.randimi.mapping.study.SiteMapper;
 import de.unimuenster.imi.randimi.model.enumeration.StratumType;
 import de.unimuenster.imi.randimi.model.study.stratum.*;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -140,7 +141,7 @@ public class StratumPartMapper {
 	//=========================================
 
 	private StratumPartEnumeration toStratumPartEnumeration(final StratumPartBaseDTO dto,
-	                                                        final StratumPartBase entity) {
+	                                                        @Nullable final StratumPartBase entity) {
 		final StratumPartEnumeration stratumPartEnumeration = entity == null
 		                                                      ? new StratumPartEnumeration()
 		                                                      : (StratumPartEnumeration) entity;
@@ -150,7 +151,7 @@ public class StratumPartMapper {
 		return stratumPartEnumeration;
 	}
 
-	private StratumPartInterval toStratumPartInterval(final StratumPartBaseDTO dto, final StratumPartBase entity) {
+	private StratumPartInterval toStratumPartInterval(final StratumPartBaseDTO dto, @Nullable final StratumPartBase entity) {
 		final StratumPartInterval stratumPartInterval = entity == null
 		                                                ? new StratumPartInterval()
 		                                                : (StratumPartInterval) entity;
@@ -159,7 +160,7 @@ public class StratumPartMapper {
 		return stratumPartInterval;
 	}
 
-	private StratumPartSite toStratumPartSite(final StratumPartBaseDTO dto, final StratumPartBase entity,
+	private StratumPartSite toStratumPartSite(final StratumPartBaseDTO dto, @Nullable final StratumPartBase entity,
 	                                          final Stratum stratum) {
 		final StratumPartSite stratumPartsite = entity == null
 		                                        ? new StratumPartSite()

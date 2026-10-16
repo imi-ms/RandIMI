@@ -258,8 +258,8 @@ public class SubjectControllerTest extends MVCControllerTestBase {
 		                  "Remaining assignments have not been updated!");
 
 		subjectDTO = getValidSubjectDTONoStratification(study, study.getSites().get(0));
-		testSubject(subjectDTO, study, 1, 4);
-		assertArrayEquals(new Integer[] { 3, 0 }, study.getSubjectLists().get(0).getRemainingAssignments(),
+		testSubject(subjectDTO, study, 0, 4);
+		assertArrayEquals(new Integer[] { 2, 1 }, study.getSubjectLists().get(0).getRemainingAssignments(),
 		                  "Remaining assignments have not been updated!");
 	}
 
@@ -294,8 +294,7 @@ public class SubjectControllerTest extends MVCControllerTestBase {
 				                .with(csrf())
 				                .header("referer", "id=1")
 				                .flashAttr(SubjectController.DELETE_SUBJECT_DTO_KEY, deleteSubjectDTO))
-		       .andExpect(redirectedUrl("/studies/null/subject-lists/0"))
-		       .andExpect(flash().attributeExists("error"));
+				.andExpect(status().isForbidden());
 	}
 
 	@RepeatedTest(value = 3, failureThreshold = 2)
@@ -497,8 +496,7 @@ public class SubjectControllerTest extends MVCControllerTestBase {
 		mockMvc.perform(post("/subjects/edit-pseudonym")
 		                            .with(csrf())
 		                            .flashAttr(SubjectController.EDIT_SUBJECT_PSEUDONYM_DTO_KEY, editSubjectPseudonymDTO))
-		       .andExpect(redirectedUrl("/studies/null/subject-lists/0"))
-		       .andExpect(flash().attributeExists("error"));
+				.andExpect(status().isForbidden());
 	}
 
 	@Test
@@ -571,11 +569,10 @@ public class SubjectControllerTest extends MVCControllerTestBase {
 		editSubjectPseudonymDTO.setSubjectListId(0L);
 		editSubjectPseudonymDTO.setSubjectId(0L);
 
-		mockMvc.perform(post("/subjects/edit-pseudonym").with(csrf())
-		                                                .flashAttr(SubjectController.EDIT_SUBJECT_PSEUDONYM_DTO_KEY, editSubjectPseudonymDTO))
-		       .andDo(print())
-		       .andExpect(redirectedUrl("/studies/" + study.getApiId() + "/subject-lists/0"))
-		       .andExpect(flash().attributeExists("error"));
+		mockMvc.perform(post("/subjects/edit-pseudonym")
+				                .with(csrf())
+				                .flashAttr(SubjectController.EDIT_SUBJECT_PSEUDONYM_DTO_KEY, editSubjectPseudonymDTO))
+				.andExpect(status().isForbidden());
 	}
 
 	@Test

@@ -14,8 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.Errors;
 
+import java.util.List;
+
 /**
  * Implementation of a simple coin toss algorithm.
+ * <p>
+ * Version 2: The study arm is drawn weighted by the ratios of the study arms.
+ * See {@link CoinTossRandomizationV1} for the previous version.
  *
  * @author Tobias Brix
  * @author Tobias Hardt
@@ -24,7 +29,7 @@ import org.springframework.validation.Errors;
 @Service
 public class CoinTossRandomization extends AbstractRandomization {
 
-	private final RandomService randomService;
+	protected final RandomService randomService;
 
 	@Autowired
 	public CoinTossRandomization(final MessageService messageService, final RandomService randomService) {
@@ -38,10 +43,37 @@ public class CoinTossRandomization extends AbstractRandomization {
 	}
 
 	@Override
+	public int getVersion() {
+		return 2;
+	}
+
+	@Override
 	public StudyArm getRandomStudyArm(Site site, SubjectList subjectList) {
 		Study study = site.getStudy();
-		int studyArmIndex = randomService.nextRandomInt(site, subjectList, study.getStudyArms().size());
-		return study.getStudyArms().get(studyArmIndex);
+		return study.getStudyArms().get(drawStudyArmIndex(site, subjectList));
+	}
+
+	/**
+	 * Draws the index of the study arm for the next subject.
+	 *
+	 * @param site        The site of the subject.
+	 * @param subjectList The list the subject will be assigned to.
+	 * @return Index of the drawn study arm.
+	 */
+	protected int drawStudyArmIndex(Site site, SubjectList subjectList) {
+		List<StudyArm> studyArms = site.getStudy().getStudyArms();
+		int sumRatios = 0;
+		for (final StudyArm studyArm : studyArms)
+			sumRatios += studyArm.getRatio();
+
+		int ratioIndex = randomService.nextRandomInt(site, subjectList, sumRatios);
+		int studyArmIndex = 0;
+		while (ratioIndex >= studyArms.get(studyArmIndex).getRatio()) {
+			ratioIndex -= studyArms.get(studyArmIndex).getRatio();
+			studyArmIndex++;
+		}
+
+		return studyArmIndex;
 	}
 
 	@Override

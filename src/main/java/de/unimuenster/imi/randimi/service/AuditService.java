@@ -1,14 +1,8 @@
 package de.unimuenster.imi.randimi.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.unimuenster.imi.randimi.dto.ChangeReason;
 import de.unimuenster.imi.randimi.dto.study.StudyDTO;
 import de.unimuenster.imi.randimi.dto.study.user.StudyUsersDTO;
-import de.unimuenster.imi.randimi.dto.subject.DeleteSubjectDTO;
 import de.unimuenster.imi.randimi.model.AuditEntry;
 import de.unimuenster.imi.randimi.model.audit.ExportSubjectsAuditEntry;
 import de.unimuenster.imi.randimi.model.audit.StatusChangeAuditEntry;
@@ -19,12 +13,17 @@ import de.unimuenster.imi.randimi.model.subject.Subject;
 import de.unimuenster.imi.randimi.repository.AuditEntryRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
-import org.springframework.lang.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -34,13 +33,13 @@ public class AuditService {
 
 	private static final Logger LOGGER = LogManager.getLogger(AuditService.class);
 
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
 	private final AuditEntryRepository auditEntryRepository;
 
 	@Autowired
-	public AuditService(final ObjectMapper objectMapper, final AuditEntryRepository auditEntryRepository) {
-		this.objectMapper = objectMapper;
+	public AuditService(final JsonMapper jsonMapper, final AuditEntryRepository auditEntryRepository) {
+		this.jsonMapper = jsonMapper;
 		this.auditEntryRepository = auditEntryRepository;
 	}
 
@@ -50,8 +49,8 @@ public class AuditService {
 			return null;
 		}
 		try {
-			return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-		} catch (final JsonProcessingException e) {
+			return jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+		} catch (final JacksonException e) {
 			LOGGER.error("Unable to convert DTO");
 			LOGGER.error(e);
 			return null;
@@ -271,8 +270,8 @@ public class AuditService {
 		}
 
 		try {
-			auditEntry.setContent(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dto));
-		} catch (JsonProcessingException e) {
+			auditEntry.setContent(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dto));
+		} catch (final JacksonException e) {
 			LOGGER.error("Unable to set content of audit entry. Failed to convert JsonNode", e);
 		}
 	}
@@ -288,12 +287,12 @@ public class AuditService {
 			return;
 		}
 
-		final JsonNode dtoJsonNode = objectMapper.valueToTree(dto);
+		final JsonNode dtoJsonNode = jsonMapper.valueToTree(dto);
 		if (dtoJsonNode instanceof ObjectNode dtoNode) {
 			final ObjectNode oldDtoNode;
 			try {
-				oldDtoNode = (ObjectNode) objectMapper.readTree(oldDto);
-			} catch (JsonProcessingException e) {
+				oldDtoNode = (ObjectNode) jsonMapper.readTree(oldDto);
+			} catch (final JacksonException e) {
 				LOGGER.error("Unable to set content of audit entry. Failed to parse old DTO data", e);
 				return;
 			}
@@ -305,15 +304,15 @@ public class AuditService {
 				auditEntry.setOldContent("");
 
 				try {
-					auditEntry.setOldContent(objectMapper.writerWithDefaultPrettyPrinter()
-					                                     .writeValueAsString(differences.getFirst()));
-				} catch (JsonProcessingException e) {
+					auditEntry.setOldContent(jsonMapper.writerWithDefaultPrettyPrinter()
+					                                   .writeValueAsString(differences.getFirst()));
+				} catch (final JacksonException e) {
 					LOGGER.error("Unable to set old content of audit entry. Failed to convert JsonNode", e);
 				}
 				try {
-					auditEntry.setContent(objectMapper.writerWithDefaultPrettyPrinter()
-					                                  .writeValueAsString(differences.getSecond()));
-				} catch (JsonProcessingException e) {
+					auditEntry.setContent(jsonMapper.writerWithDefaultPrettyPrinter()
+					                                .writeValueAsString(differences.getSecond()));
+				} catch (final JacksonException e) {
 					LOGGER.error("Unable to set content of audit entry. Failed to convert JsonNode", e);
 				}
 			}
@@ -336,8 +335,8 @@ public class AuditService {
 		final T newDifferences;
 
 		if (oldNode.isObject()) {
-			final ObjectNode oldObjectDifferences = objectMapper.createObjectNode();
-			final ObjectNode newObjectDifferences = objectMapper.createObjectNode();
+			final ObjectNode oldObjectDifferences = jsonMapper.createObjectNode();
+			final ObjectNode newObjectDifferences = jsonMapper.createObjectNode();
 
 			final Set<Map.Entry<String, JsonNode>> properties = oldNode.properties();
 			for (final Map.Entry<String, JsonNode> entry : properties) {
@@ -355,11 +354,11 @@ public class AuditService {
 			oldDifferences = (T) oldObjectDifferences;
 			newDifferences = (T) newObjectDifferences;
 		} else if (oldNode.isArray()) {
-			final var oldArrayNode = oldNode.isEmpty() ? objectMapper.createArrayNode() : (ArrayNode) oldNode;
-			final var newArrayNode = newNode.isEmpty() ? objectMapper.createArrayNode() : (ArrayNode) newNode;
+			final var oldArrayNode = oldNode.isEmpty() ? jsonMapper.createArrayNode() : (ArrayNode) oldNode;
+			final var newArrayNode = newNode.isEmpty() ? jsonMapper.createArrayNode() : (ArrayNode) newNode;
 
-			final var oldArrayDifferences = objectMapper.createArrayNode();
-			final var newArrayDifferences = objectMapper.createArrayNode();
+			final var oldArrayDifferences = jsonMapper.createArrayNode();
+			final var newArrayDifferences = jsonMapper.createArrayNode();
 
 			final int size = Math.max(oldArrayNode.size(), newArrayNode.size());
 

@@ -1,14 +1,13 @@
 package de.unimuenster.imi.randimi.config;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
+import org.springframework.boot.thymeleaf.autoconfigure.ThymeleafAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
 import org.springframework.context.annotation.Profile;
-import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.thymeleaf.TemplateEngine;
@@ -26,7 +25,7 @@ public class ThymeleafConfig implements ApplicationContextAware, WebMvcConfigure
 	private ApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(@NonNull final ApplicationContext applicationContext) {
+	public void setApplicationContext(final ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 
@@ -49,7 +48,7 @@ public class ThymeleafConfig implements ApplicationContextAware, WebMvcConfigure
 	@Bean("templateEngine")
 	@Profile("!dev")
 	public TemplateEngine templateEngine() {
-		final SpringTemplateEngine engine = creteTemplateEngine();
+		final SpringTemplateEngine engine = createTemplateEngine();
 		engine.setTemplateResolver(templateResolver());
 		return engine;
 	}
@@ -57,10 +56,10 @@ public class ThymeleafConfig implements ApplicationContextAware, WebMvcConfigure
 	@Bean("templateEngine")
 	@Profile("dev")
 	public TemplateEngine templateEngineDev() {
-		final SpringTemplateEngine engine = creteTemplateEngine();
+		final SpringTemplateEngine engine = createTemplateEngine();
 		final SpringResourceTemplateResolver resolver = templateResolver();
 		resolver.setCacheable(false);
-		engine.setTemplateResolver(templateResolver());
+		engine.setTemplateResolver(resolver);
 		return engine;
 	}
 
@@ -81,7 +80,7 @@ public class ThymeleafConfig implements ApplicationContextAware, WebMvcConfigure
 		return viewResolver;
 	}
 
-	private SpringTemplateEngine creteTemplateEngine() {
+	private SpringTemplateEngine createTemplateEngine() {
 		final SpringTemplateEngine engine = new SpringTemplateEngine();
 		engine.setEnableSpringELCompiler(true);
 		engine.addDialect(new SpringSecurityDialect());

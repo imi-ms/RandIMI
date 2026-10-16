@@ -1,5 +1,7 @@
 package de.unimuenster.imi.randimi.model.enumeration;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -32,7 +34,7 @@ public enum AuditReasonType {
 	DOES_NOT_MEET_INCLUSION_CRITERIA("INCLUSION_CRITERIA_NOT_MET", AuditReasonTarget.DELETE_SUBJECT),
 	;
 
-	private String textValue;
+	private final String textValue;
 	private static final Map<String, AuditReasonType> stringToEnum = new HashMap<>();
 
 	static // Initialize map from constant name to enum constant
@@ -46,7 +48,7 @@ public enum AuditReasonType {
 		this.textValue = textValue;
 	}
 
-	public static boolean isValid(String enumString) {
+	public static boolean isValid(@Nullable String enumString) {
 		return Arrays.stream(values()).map(Objects::toString).anyMatch(e -> e.equals(enumString));
 	}
 
@@ -102,7 +104,7 @@ public enum AuditReasonType {
 		UPDATE_SUBJECT,
 		DELETE_SUBJECT;
 
-		private List<AuditReasonType> members = new LinkedList<>();
+		private final List<AuditReasonType> members = new LinkedList<>();
 
 		@Override
 		public EnumSet<AuditReasonType> getMembers() {

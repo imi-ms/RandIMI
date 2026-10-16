@@ -5,6 +5,7 @@ import de.unimuenster.imi.randimi.dto.subject.DeleteSubjectDTO;
 import de.unimuenster.imi.randimi.dto.subject.EditSubjectPseudonymDTO;
 import de.unimuenster.imi.randimi.dto.subject.SubjectListDTO;
 import de.unimuenster.imi.randimi.mapping.study.StudyMapper;
+import de.unimuenster.imi.randimi.mapping.subject.SubjectEntryMapper;
 import de.unimuenster.imi.randimi.mapping.subject.SubjectListMapper;
 import de.unimuenster.imi.randimi.model.enumeration.*;
 import de.unimuenster.imi.randimi.model.study.Site;
@@ -20,6 +21,7 @@ import de.unimuenster.imi.randimi.service.ExportService;
 import de.unimuenster.imi.randimi.service.MessageService;
 import de.unimuenster.imi.randimi.service.StratumCodeService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -58,6 +60,7 @@ public class SubjectListController {
 	private final ExportService exportService;
 	private final MessageService messageService;
 	private final StratumCodeService stratumCodeService;
+	private final SubjectEntryMapper subjectEntryMapper;
 
 	@Autowired
 	public SubjectListController(
@@ -70,8 +73,8 @@ public class SubjectListController {
 			final AuditService auditService,
 			final ExportService exportService,
 			final MessageService messageService,
-			final StratumCodeService stratumCodeService
-	) {
+			final StratumCodeService stratumCodeService,
+			SubjectEntryMapper subjectEntryMapper) {
 		this.aclEntryRepository = aclEntryRepository;
 		this.studyRepository = studyRepository;
 		this.subjectListRepository = subjectListRepository;
@@ -84,6 +87,7 @@ public class SubjectListController {
 		this.exportService = exportService;
 		this.messageService = messageService;
 		this.stratumCodeService = stratumCodeService;
+		this.subjectEntryMapper = subjectEntryMapper;
 	}
 
 	/**
@@ -166,6 +170,45 @@ public class SubjectListController {
 		model.addAttribute("capacities", capacities);
 		model.addAttribute("subjectLists", subjectListDTOs);
 		model.addAttribute("study", requestedStudyDTO);
+
+
+		var allSubjects = subjectRepository.findBySubjectListStudyIdAndStatusNot(
+				requestedStudy.getId(), SubjectStatus.PRE_GENERATED);
+		// Filter out subjects for which the user has no permissions
+		if (!currentUser.hasUserRole(UserRoles.ROLE_ADMIN)) {
+			final boolean hasStudyWideReadSubjectPermissions = aclEntryRepository.hasPermission(
+					currentUser, requestedStudy, PermissionType.READ_SUBJECT);
+
+			if (!hasStudyWideReadSubjectPermissions) {
+				final Set<String> readSubjectsSiteNames = requestedStudy.getSites().stream()
+				                                                        .filter(site -> aclEntryRepository.hasPermission(currentUser, site, PermissionType.READ_SUBJECT))
+				                                                        .map(Site::getGuiName)
+				                                                        .collect(Collectors.toSet());
+				allSubjects.removeIf(subject -> !readSubjectsSiteNames.contains(subject.getSite().getGuiName()));
+			}
+		}
+		var allSubjectsDTOs = allSubjects.stream()
+		                                 .map(subjectEntryMapper::toSubjectEntryDTO)
+		                                 .toList();
+		model.addAttribute("allSubjects", allSubjectsDTOs);
+
+		// Attributes for subject deletion
+		final DeleteSubjectDTO deleteSubjectDTO = new DeleteSubjectDTO();
+		deleteSubjectDTO.setStudyId(requestedStudy.getId());
+		deleteSubjectDTO.setStudyApiId(studyApiId);
+
+		model.addAttribute(DELETE_SUBJECT_DTO_KEY, deleteSubjectDTO);
+		model.addAttribute("reasonTypes",
+		                   AuditReasonType.getMembersForGroup(AuditReasonType.AuditReasonTarget.DELETE_SUBJECT));
+
+		// Attributes for editing subject pseudonym
+		final EditSubjectPseudonymDTO editSubjectPseudonymDTO = new EditSubjectPseudonymDTO();
+		editSubjectPseudonymDTO.setStudyId(requestedStudy.getId());
+		editSubjectPseudonymDTO.setStudyApiId(studyApiId);
+
+		model.addAttribute(EDIT_SUBJECT_PSEUDONYM_DTO_KEY, editSubjectPseudonymDTO);
+		model.addAttribute("editPseudonymReasonTypes",
+		                   AuditReasonType.getMembersForGroup(AuditReasonType.AuditReasonTarget.UPDATE_SUBJECT));
 
 		return "/subjects/list";
 	}
@@ -273,12 +316,12 @@ public class SubjectListController {
 	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_STUDY)")
 	public void downloadSubjectLists(
 			@PathVariable final String studyApiId,
-			@RequestParam(value = "splitFiles", required = false) final String splitFiles,
+			@RequestParam(value = "splitFiles", required = false) @Nullable final String splitFiles,
 			@RequestParam(value = "includeApiIds", defaultValue = "false") final boolean includeApiIds,
 			@RequestParam(value = "format", required = true) final ExportFileType format,
 			@RequestParam(value = "delimiter", required = true) final Delimiter delimiter,
-			@RequestParam(value = "status", required = false) final Set<SubjectStatus> status,
-			@RequestParam(value = "sites", required = false) final Set<String> sites,
+			@RequestParam(value = "status", required = false) @Nullable final Set<SubjectStatus> status,
+			@RequestParam(value = "sites", required = false) @Nullable final Set<String> sites,
 			@RequestParam final MultiValueMap<String, String> strata,
 			@AuthenticationPrincipal final MyUserDetails currentUserDetails,
 			final HttpServletResponse response
@@ -307,8 +350,8 @@ public class SubjectListController {
 			@RequestParam(value = "format", required = true) final ExportFileType format,
 			@RequestParam(value = "delimiter", required = true) final Delimiter delimiter,
 			@RequestParam(value = "includeApiIds", defaultValue = "false") final boolean includeApiIds,
-			@RequestParam(value = "status", required = false) final Set<SubjectStatus> status,
-			@RequestParam(value = "sites", required = false) final Set<String> sites,
+			@RequestParam(value = "status", required = false) @Nullable final Set<SubjectStatus> status,
+			@RequestParam(value = "sites", required = false) @Nullable final Set<String> sites,
 			@RequestParam final MultiValueMap<String, String> strata,
 			@AuthenticationPrincipal final MyUserDetails currentUserDetails,
 			final HttpServletResponse response

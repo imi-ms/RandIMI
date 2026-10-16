@@ -15,7 +15,7 @@ public enum UserRoles {
 	ROLE_USER_MANAGER("ROLE_USER_MANAGER"),
 	ROLE_LOCAL_MANAGER("ROLE_LOCAL_MANAGER"),
 	ROLE_ADMIN("ROLE_ADMIN");
-	private String textValue;
+	private final String textValue;
 	private static final Map<String, UserRoles> stringToEnum = new HashMap<>();
 
 	static // Initialize map from constant name to enum constant

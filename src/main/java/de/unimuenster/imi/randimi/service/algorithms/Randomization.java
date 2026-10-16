@@ -28,6 +28,15 @@ public interface Randomization {
 	RandomizationAlgorithm getAlgorithm();
 
 	/**
+	 * Return the version of the algorithm the class implements.
+	 * Studies keep the version they were created with, so changes to an algorithm that alter the assignments must be
+	 * introduced as a new version instead of modifying an existing one.
+	 *
+	 * @return version, starting at 1
+	 */
+	int getVersion();
+
+	/**
 	 * Called after a SubjectList was created.
 	 *
 	 * @param subjectList The created SubjectList.

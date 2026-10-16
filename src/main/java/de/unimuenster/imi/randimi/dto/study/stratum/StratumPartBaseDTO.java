@@ -6,6 +6,7 @@ import de.unimuenster.imi.randimi.dto.study.SiteDTO;
 import de.unimuenster.imi.randimi.model.SelectInputOption;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -39,6 +40,7 @@ public class StratumPartBaseDTO extends NamesDTO implements SelectInputOption {
 	 * Specific for StratumPartSite.
 	 */
 	@JsonIgnore
+	@Nullable
 	private SiteDTO site;
 
 	/**

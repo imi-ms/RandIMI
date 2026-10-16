@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Subject Delete Popup</title>
+</head>
+<body>
+
+<!--/*@thymesVar id="deleteSubjectDTO" type="de.unimuenster.imi.randimi.dto.subject.DeleteSubjectDTO"*/-->
+<th:block th:fragment="subject_delete_popup(deleteSubjectDTO)">
+	<form method="POST" th:action="@{/subjects/remove}" th:object="${deleteSubjectDTO}">
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='confirmPopup', popupTitleMessageCode='subjects.view.deleteSubject.title', bodyContent=~{::#deleteSubjectPopupBody}, footerContent=~{::#deleteSubjectPopupFooter})}">
+			<div id="deleteSubjectPopupBody">
+				<div class="mb-3">
+					<span id="popup-text"></span>
+				</div>
+
+				<div class="mb-3">
+					<div th:replace="~{fragments/inputs.html :: checkboxInput(fieldName='release', label=#{subjects.view.changeReason.release}, toggleable='allowRelease')}">
+					</div>
+				</div>
+
+				<div th:replace="~{fragments/change_reason.html :: changeReason(reasonTypesKey='reasonTypes', changeReasonKey='deleteSubjectDTO.changeReason')}">
+				</div>
+
+				<input id="subjectListId" type="hidden" class="form-control" th:field="*{subjectListId}"/>
+				<input id="subjectId" type="hidden" class="form-control" th:field="*{subjectId}"/>
+				<input id="siteId" type="hidden" class="form-control" th:field="*{siteId}"/>
+				<input type="hidden" class="form-control" th:field="*{studyId}"/>
+				<input type="hidden" th:field="*{studyApiId}"/>
+			</div>
+			<div id="deleteSubjectPopupFooter">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true"
+				        th:text="#{button.cancel}">Cancel
+				</button>
+				<button type="submit" class="btn btn-primary" value="save" id="saveButton" name="action"
+				        th:text="#{button.save}">Save
+				</button>
+			</div>
+		</div>
+	</form>
+
+	<script type="text/javascript">
+
+        /**
+         * Updates the delete popup with the data attributes of the pressed button.
+         * @param {HTMLElement} deleteButton The pressed button containing the data attributes.
+         */
+		function updateDeletePopupFromButton(deleteButton) {
+			const entryId = deleteButton.dataset['randomizationEntryId'];
+			const entryPseudonym = deleteButton.dataset['randomizationEntryPseudonym'];
+			const entryStatus = deleteButton.dataset['randomizationEntryStatus'];
+			const siteId = deleteButton.dataset['randomizationEntrySiteId'];
+
+			updateDeletePopup(entryId, entryPseudonym, entryStatus, siteId);
+		}
+
+        function updateDeletePopup(entryId, entryPseudonym, entryStatus, siteId) {
+            const deleteDialogueText = /*[[#{subjects.view.deleteSubject.popupText}]]*/ 'Do you really want to delete the subject SUBJECT_PLACEHOLDER? Please give a reason.';
+
+            document.getElementById('popup-text').innerText = deleteDialogueText.replace("SUBJECT_PLACEHOLDER", "'" + entryPseudonym + "'");
+            document.getElementById('siteId').value = siteId;
+            document.getElementById('subjectId').value = entryId;
+
+            const release = document.getElementById('release');
+            const releaseDummy = document.getElementById('releaseDummy');
+
+            if (entryStatus === 'ACTIVE') {
+                releaseDummy.style.display = 'none';
+                release.style.display = "block";
+                release.checked = false;
+            } else {
+                releaseDummy.style.display = 'block';
+                releaseDummy.checked = true;
+                release.style.display = "none";
+                release.checked = true;
+            }
+        }
+
+	</script>
+</th:block>
+
+</body>
+</html>

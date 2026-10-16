@@ -30,17 +30,17 @@ public class AclEntryRepositoryTest extends RepositoryTestBase {
 
 	@Test
 	public void findFirstByObjectAndAclSidAndPermissionTypeTest() {
-		AclEntry aclEntry = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy,
+		AclEntry aclEntry = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy,
 		                                                                                   apiUser.getAclSid(),
 		                                                                                   PermissionType.READ_STUDY);
 		assertNotNull(aclEntry, "AclEntry not found!");
 
-		aclEntry = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy, apiUser.getAclSid(),
-				PermissionType.GET_NOTIFICATION);
+		aclEntry = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy, apiUser.getAclSid(),
+		                                                                          PermissionType.GET_NOTIFICATION);
 		assertNull(aclEntry, "Found AclEntry that should not exist!");
 
-		aclEntry = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(activeStudy, activeUser.getAclSid(),
-				PermissionType.READ_AUDIT_SIMPLE);
+		aclEntry = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(activeStudy, activeUser.getAclSid(),
+		                                                                          PermissionType.READ_AUDIT_SIMPLE);
 		assertNull(aclEntry, "Found AclEntry that should not exist!");
 	}
 

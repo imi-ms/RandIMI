@@ -11,10 +11,13 @@
                                                            content=~{::#contentDiv},
                                                            script=~{::body/script})}"
       xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:th="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
 	<title th:text="'Randimi - ' + #{subjects.view.headline(${study.guiName})}">Randimi - Show Subjects</title>
 	<th:block>
+		<script type="text/javascript" th:src="@{/resources/js/subject-lists.js}"></script>
+
 		<link rel="stylesheet" type="text/css" charset="utf8" href=""
 		      th:href="@{/webjars/datatables/css/dataTables.dataTables.css}"/>
 		<script type="text/javascript" th:src="@{/webjars/datatables/js/dataTables.js}"></script>
@@ -40,83 +43,244 @@
 		<!-- Download button-->
 		<a data-bs-target="#exportPopup" data-bs-toggle="modal" href="" class="btn btn-primary randimi-sidebar-button">
 			<span class="fas fa-cloud-download-alt randimi-sidebar-button-icon"></span>
-			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{subjects.view.downloadSubjectList}"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text"
+			      th:text="#{subjects.view.downloadSubjectList}"></span>
 		</a>
 
 		<!-- Back-button to studies page -->
 		<div th:replace="~{fragments/sidebar.html :: backButton(action=@{/studies})}"></div>
 	</div>
+
+	<div class="randimi-sidebar-section">
+		<div class="randimi-sidebar-section-header" th:text="#{sidebar.submenus}">Submenus</div>
+
+		<button id="subjectListsButton" type="button" class="btn btn-primary randimi-sidebar-button"
+		        onclick="openSubjectLists()">
+			<span class="fas fa-layer-group randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{subjects.list.strata}"></span>
+		</button>
+
+		<button id="allSubjectsButton" type="button" class="btn btn-primary randimi-sidebar-button"
+		        onclick="openAllSubjects()">
+			<span class="fas fa-users randimi-sidebar-button-icon"></span>
+			<span class="randimi-sidebar-button-label selenium-language-text" th:text="#{subjects.list.allSubjects}"></span>
+		</button>
+	</div>
+
 </div>
 
 <!--/* Content of the current study */-->
 <div id="contentDiv" class="randimi-content-box randimi-dataTables">
-	<table id="subjectListsTable" class="randimi-table">
-		<thead>
-		<tr>
-			<th th:each="stratumPart, stratumPartIterator : ${study.enumeratedStratums}"
-			    th:text="${stratumPart.guiName}"
-			    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
-			</th>
-			<th th:if="${study.stratifyBySite}" th:text="#{subjects.list.site}"
-			    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
-				Site
-			</th>
-			<th th:text="#{subjects.list.statistic}" style="width: 10%;">
-				Subjects / Capacity
-			</th>
-			<th>
-				<!--/* Hidden column for sorting by number of subjects */-->
-			</th>
-			<th th:text="#{subjects.view.actions}" style="width: 10%;">Actions</th>
-		</tr>
-		</thead>
-		<tbody>
-		<th:block th:each="subjectList, subjectListIterator : ${subjectLists}">
-			<tr>
-				<td th:each="part : ${subjectList.stratumParts}" th:text="${part.getDisplayName()}">
 
-				</td>
-				<td>
-					<span th:text="${capacities[subjectListIterator.index].first}"></span>
-					<span> / </span>
-					<span th:text="${capacities[subjectListIterator.index].second}"></span>
-				</td>
-				<td th:text="${capacities[subjectListIterator.index].first}">
+	<div id="subjectLists">
+
+		<table id="subjectListsTable" class="randimi-table">
+			<thead>
+			<tr>
+				<th th:each="stratumPart, stratumPartIterator : ${study.enumeratedStratums}"
+				    th:text="${stratumPart.guiName}"
+				    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
+				</th>
+				<th th:if="${study.stratifyBySite}" th:text="#{subjects.list.site}"
+				    th:style="'width: ' + (80 / (${study.enumeratedStratums.size()} + ${study.stratifyBySite ? 1 : 0})) + '%;'">
+					Site
+				</th>
+				<th th:text="#{subjects.list.statistic}" style="width: 10%;">
+					Subjects / Capacity
+				</th>
+				<th>
 					<!--/* Hidden column for sorting by number of subjects */-->
-				</td>
-				<td>
-					<div class="randimi-column-action">
-						<!-- Show -->
-						<a th:href="@{/studies/{studyId}/subject-lists/{subjectListId}(studyId = ${study.apiId}, subjectListId = ${subjectList.id})}">
-							<span class="fas fa-eye" aria-hidden="true" th:title="#{subjects.view.showList}"></span>
-						</a>
-					</div>
-				</td>
+				</th>
+				<th th:text="#{subjects.view.actions}" style="width: 10%;">Actions</th>
 			</tr>
-		</th:block>
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+			<th:block th:each="subjectList, subjectListIterator : ${subjectLists}">
+				<tr>
+					<td th:each="part : ${subjectList.stratumParts}" th:text="${part.getDisplayName()}">
+
+					</td>
+					<td>
+						<span th:text="${capacities[subjectListIterator.index].first}"></span>
+						<span> / </span>
+						<span th:text="${capacities[subjectListIterator.index].second}"></span>
+					</td>
+					<td th:text="${capacities[subjectListIterator.index].first}">
+						<!--/* Hidden column for sorting by number of subjects */-->
+					</td>
+					<td>
+						<div class="randimi-column-action">
+							<!-- Show -->
+							<a th:href="@{/studies/{studyId}/subject-lists/{subjectListId}(studyId = ${study.apiId}, subjectListId = ${subjectList.id})}">
+								<span class="fas fa-eye" aria-hidden="true" th:title="#{subjects.view.showList}"></span>
+							</a>
+						</div>
+					</td>
+				</tr>
+			</th:block>
+			</tbody>
+		</table>
+
+	</div>
+
+	<div id="allSubjects" hidden>
+
+		<!--/* Search bar */-->
+		<div class="mb-3">
+			<div id="allSubjectsFilter" class="randimi-autocomplete-container">
+				<input type="text" class="form-control" th:placeholder="#{subjects.list.filter}"
+				       th:aria-label="#{subjects.list.filter}">
+				<div class="randimi-autocomplete">
+					<div class="randimi-autocomplete-suggestions">
+
+						<div th:each="studyArm : ${study.studyArms}" class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-value=${studyArm.apiId}, data-randimi-column='1'">
+							[[#{study.statistics.study-arm}]] | [[${studyArm.guiName}]]
+						</div>
+
+						<div th:each="site : ${study.sites}" class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-value=${site.guiName}, data-randimi-column='2'">
+							[[#{study.statistics.site}]] | [[${site.guiName}]]
+						</div>
+
+						<th:block th:each="stratum, stratumIterator : ${study.enumeratedStratums}">
+							<div th:each="stratumValue : ${stratum.stratumParts}" class="randimi-autocomplete-suggestion"
+							     th:attr="data-randimi-value=${stratumValue.guiName}, data-randimi-column=${3 + stratumIterator.index}">
+								[[#{study.statistics.stratum}]] | [[${stratum.guiName}]] | [[${stratumValue.guiName}]]
+							</div>
+						</th:block>
+
+						<div th:each="status : ${T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).values()}"
+						     th:if="${status != T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).PRE_GENERATED}"
+						     class="randimi-autocomplete-suggestion"
+						     th:attr="data-randimi-value=#{enum.SubjectStatus.__${status.name()}__}, data-randimi-column=${3 + study.enumeratedStratums.size()}">
+							Status | [[#{enum.SubjectStatus.__${status.name()}__}]]
+						</div>
+
+					</div>
+				</div>
+				<div class="randimi-autocomplete-selected">
+				</div>
+				<div class="randimi-autocomplete-template">
+					<div class="randimi-autocomplete-selected-item">
+						<span class="fas fa-times randimi-autocomplete-selected-item-icon"></span>
+						<span class="randimi-autocomplete-selected-item-value"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<table id="allSubjectsTable" class="randimi-table">
+			<!-- Header if stratified -->
+			<thead>
+			<tr>
+				<th th:text="#{subjects.view.pseudonym}">Pseudonym</th>
+				<th th:text="#{subjects.view.studyArm}">Study Arm</th>
+				<th th:text="#{subjects.view.location}">Location</th>
+				<th th:each="stratumPart, stratumPartIterator : ${study.enumeratedStratums}"
+				    th:text="${stratumPart.guiName}">
+				</th>
+				<th th:text="#{subjects.view.randomizationTimestamp}">Randomization Timestamp</th>
+				<th th:text="#{subjects.view.status}">Status</th>
+				<th th:text="#{subjects.view.actions}">Actions</th>
+			</tr>
+			</thead>
+			<tbody>
+			<!-- Each entry, only sho study arm name, if already assigned -->
+			<th:block th:each="randomizationEntry : ${allSubjects}">
+				<tr>
+					<td th:text="${randomizationEntry.getPseudonym()}" class="c-pseudonym"
+					    th:style="${randomizationEntry.isActive() ? '' : 'text-decoration: line-through;'}"></td>
+					<td th:text="${randomizationEntry.studyArmName}" class="c-study-arm-name"
+					    th:style="${randomizationEntry.isActive() ? '' : 'text-decoration: line-through;'}"></td>
+					<td th:text="${randomizationEntry.getLocation()}" class="c-location"
+					    th:style="${randomizationEntry.isActive() ? '' : 'text-decoration: line-through;'}"></td>
+					<td th:each="stratumPart, stratumPartIterator : ${study.enumeratedStratums}"
+					    th:text="${randomizationEntry.strata[stratumPart.guiName]}"
+					    th:style="${randomizationEntry.isActive() ? '' : 'text-decoration: line-through;'}">
+					</td>
+					<td th:text="${#dates.format(randomizationEntry.getRandomizationTimestamp(), '__#{datetime.format}__')}"
+					    class="c-randomization-timestamp" th:attr="data-order=${randomizationEntry.getRandomizationTimestamp().getTime()}"
+					    th:style="${randomizationEntry.isActive() ? '' : 'text-decoration: line-through;'}">
+					</td>
+					<td class="c-status" style="text-align: center;">
+						<span class="randimi-status" style="width: 250px;"
+						      th:classappend="'randimi-status-' + ${randomizationEntry.status}">
+							<span th:if="${study.isLocked()}" class="fas fa-lock" aria-hidden="true"></span>
+							<span class="randimi-status-text"
+							      th:text="#{'enum.SubjectStatus.' + ${randomizationEntry.status}}"></span>
+						</span>
+					</td>
+					<td>
+						<div class="randimi-column-action">
+
+							<span sec:authorize="@customPermissionEvaluator.hasPermissionSubjectId(#authentication, #vars.randomizationEntry.id, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).DELETE_SUBJECT)"
+							      th:unless="${randomizationEntry.getStatus() == T(de.unimuenster.imi.randimi.model.enumeration.SubjectStatus).RELEASED || study.isLocked() || study.isArchived()}">
+								<a data-bs-target="#confirmPopup" data-bs-toggle="modal" href=""
+								   onclick="updateDeletePopupFromButton(this)"
+								   th:attr="data-randomization-entry-id=${randomizationEntry.getId()}, data-randomization-entry-pseudonym=${randomizationEntry.getPseudonym()}, data-randomization-entry-status=${randomizationEntry.getStatus().toString()}, data-randomization-entry-site-id=${randomizationEntry.getSiteId()}">
+									<span class="fas fa-user-slash" aria-hidden="true"
+									      th:title="#{subjects.view.deleteSubject.title}" title="Delete Subject">
+									</span>
+								</a>
+							</span>
+
+							<!--/* Edit Pseudonym */-->
+							<span sec:authorize="@customPermissionEvaluator.hasPermissionSubjectId(#authentication, #vars.randomizationEntry.id, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_SUBJECT)"
+							      th:unless="${study.isLocked() || study.isArchived()}">
+								<a data-bs-target="#editPseudonymPopup" data-bs-toggle="modal" href=""
+								   th:attr="data-randomization-entry-id=${randomizationEntry.getId()}, data-randomization-entry-pseudonym=${randomizationEntry.getPseudonym()}"
+								   onclick="updatePseudonymPopUp(this)">
+									<span class="fas fa-pen-to-square" aria-hidden="true"
+									      th:title="#{subjects.view.editPseudonym.title}" title="Edit Pseudonym">
+									</span>
+								</a>
+							</span>
+
+							<span>
+								<a data-bs-target="#detailsPopup" data-bs-toggle="modal" href=""
+								   onclick="updateDetailsPopup(this)">
+									<span class="fas fa-info" th:title="#{subjects.view.showDetails}"></span>
+								</a>
+							</span>
+
+							<!--/* Hidden data for details popup */-->
+							<div class="d-none">
+								<div class="c-index" th:text="${randomizationEntry.orderNumber}"></div>
+								<div class="c-deletion-timestamp"
+								     th:text="${#dates.format(randomizationEntry.getDeletionTimestamp(), '__#{datetime.format}__')}"></div>
+								<div class="c-release-timestamp"
+								     th:text="${#dates.format(randomizationEntry.getReleaseTimestamp(), '__#{datetime.format}__')}"></div>
+							</div>
+
+						</div>
+					</td>
+				</tr>
+			</th:block>
+			</tbody>
+		</table>
+
+	</div>
 
 	<!--/* Export popup */-->
 	<form method="GET" th:action="@{/studies/{studyId}/subject-lists/download(studyId=${study.apiId})}">
 		<div th:replace="~{fragments/subject-export-popup.html :: subject_export_popup(popupId='exportPopup', study=${study})}">
 		</div>
 	</form>
+
+	<!--/* Delete popup */-->
+	<div th:replace="~{fragments/subject-delete-popup.html :: subject_delete_popup(deleteSubjectDTO=${deleteSubjectDTO})}"></div>
+
+	<!--/* Details popup */-->
+	<div th:replace="~{fragments/subject-details-popup.html :: subject_details_popup}"></div>
+
+	<!--/* Edit Pseudonym popup */-->
+	<div th:replace="~{fragments/subject-pseudonym-popup.html :: subject_pseuodnym_popup(editSubjectPseudonymDTO=${editSubjectPseudonymDTO})}"></div>
 </div>
-<script type="text/javascript" th:inline="javascript">
-    initPage();
-
-    function initPage() {
-        const numberStrata = /*[[${subjectLists[0].stratumParts.size()}]]*/ 0;
-
-        randimi.setUpDatatable('subjectListsTable', {
-			'columnDefs': [
-                {'targets': [numberStrata], 'orderData': [numberStrata + 1]},
-                {'targets': [numberStrata + 1], 'visible': false, 'searchable': false, 'type': 'num'},
-                {'targets': [numberStrata + 2], 'orderable': false}
-			],
-        });
-    }
+<script type="text/javascript">
+    const numberStrata = [[${study.enumeratedStratums.size()}]];
+    const numberSiteStrata = [[${study.stratifyBySite ? 1 : 0}]];
+    initPageSubjectLists();
 </script>
 </body>
 </html>

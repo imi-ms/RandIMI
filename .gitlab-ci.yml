@@ -50,6 +50,9 @@ build-docker:
   image: docker:latest
   services:
     - docker:dind
+  variables:
+    # Fix for https://forum.gitlab.com/t/started-yesterday-docker-push-error-from-registry-blob-unknown-to-registry/134733
+    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
@@ -73,13 +76,6 @@ test-job:
       alias: dind-docker
       command: ["--tls=false"]
     - postgres:16
-    - name: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-      alias: tomcatserver
-      variables:
-        SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/randimi_test_db
-        SPRING_DATASOURCE_USERNAME: randomuser
-        SPRING_DATASOURCE_PASSWORD: $DB_PASSWORD
-        HEALTHCHECK_TCP_PORT: "8080"
   variables:
     MAVEN_CLI_OPTS: "-Dmaven.test.failure.ignore=false" # Fail the pipeline if tests fail
     TESTCONTAINERS_RYUK_DISABLED: "true" # If using Ryuk container in Testcontainers

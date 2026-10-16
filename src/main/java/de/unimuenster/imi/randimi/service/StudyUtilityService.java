@@ -4,6 +4,7 @@ import de.unimuenster.imi.randimi.dto.study.StudyArmDTO;
 import de.unimuenster.imi.randimi.dto.study.StudyDTO;
 import de.unimuenster.imi.randimi.model.study.Study;
 import de.unimuenster.imi.randimi.model.study.StudyArm;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class StudyUtilityService {
 			studyArm.setRatio(studyArm.getRatio() / gdc);
 		}
 	}
-	private boolean isValid(List<Integer> ratios) {
+	private boolean isValid(List<@Nullable Integer> ratios) {
 		return ratios.stream().allMatch(number -> number != null && number > 0);
 	}
 

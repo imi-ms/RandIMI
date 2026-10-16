@@ -30,8 +30,7 @@ public class CustomAuthenticationProvider {
 
 	@Bean
 	public DaoAuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(randimiUserDetailsService);
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(randimiUserDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder);
 		authProvider.setHideUserNotFoundExceptions(false);
 		return authProvider;
@@ -39,8 +38,7 @@ public class CustomAuthenticationProvider {
 
 	@Bean
 	public DaoAuthenticationProvider apiAuthenticationProvider(PasswordEncoder passwordEncoder) {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(randimiUserDetailsService);
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(randimiUserDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder);
 		return authProvider;
 	}

@@ -2,7 +2,6 @@ package de.unimuenster.imi.randimi.dto.settings;
 
 import de.unimuenster.imi.randimi.model.enumeration.GravatarDefaultOption;
 import de.unimuenster.imi.randimi.model.enumeration.SupportedLanguage;
-import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 

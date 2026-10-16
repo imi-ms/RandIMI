@@ -33,8 +33,11 @@ import de.unimuenster.imi.randimi.model.study.Site;
 import de.unimuenster.imi.randimi.repository.study.StudyRepository;
 
 import de.unimuenster.imi.randimi.service.auth.CustomPermissionEvaluator;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -75,6 +78,9 @@ public class RandomizationService {
 	private final AuditService auditService;
 	private final RandimiMailService mailService;
 
+	@PersistenceContext
+	private EntityManager entityManager;
+
 	@Autowired
 	public RandomizationService(final SiteRepository siteRepository,
 	                            final StudyRepository studyRepository,
@@ -110,7 +116,7 @@ public class RandomizationService {
 	@Deprecated
 	@Transactional
 	public Subject assignSubjectToStudyArm(RandomizePatientRequestBodyV1 body) throws RandimiException {
-		Study study = getStudyByApiIdOrThrow(body.getStudyApiId().toString());
+		Study study = lockStudy(getStudyByApiIdOrThrow(body.getStudyApiId().toString()));
 		SubjectDTO subjectDTO = convertRequestBodyToSubjectDTOorThrow(body, study);
 		return doAssign(subjectDTO, study);
 	}
@@ -125,7 +131,7 @@ public class RandomizationService {
 	 */
 	@Transactional
 	public Subject assignSubjectToStudyArm(String studyApiId, RandomizePatientRequestBodyV2 body) throws RandimiException {
-		Study study = getStudyByApiIdOrThrow(studyApiId);
+		Study study = lockStudy(getStudyByApiIdOrThrow(studyApiId));
 		SubjectDTO subjectDTO = convertRequestBodyToSubjectDTOorThrow(body, study);
 		return doAssign(subjectDTO, study);
 	}
@@ -140,7 +146,7 @@ public class RandomizationService {
 	 */
 	@Transactional
 	public Subject assignSubjectToStudyArm(SubjectDTO subjectDTO) throws RandimiException {
-		Study study = getStudyByIdOrThrow(subjectDTO.getStudyId());
+		Study study = lockStudy(getStudyByIdOrThrow(subjectDTO.getStudyId()));
 
 		// Set site api id and location
 		Site associatedSite = siteRepository.findById(subjectDTO.getSiteId()).get();
@@ -185,10 +191,27 @@ public class RandomizationService {
 	}
 
 	/**
-	 * Method is synchronized because the called method always opens a new transaction
-	 * and some time is required to close the transaction.
+	 * Locks the study until the transaction commits, so concurrent assignments to the study are executed one after
+	 * another.
+	 * <p>
+	 * Synchronizing the assignment is not sufficient, because the transaction, possibly started by the caller, commits
+	 * after the assignment returns. The next assignment would then read the pseudonyms, order numbers, remaining
+	 * block assignments and random states before the commit, and reuse them.
+	 *
+	 * @param study The study.
+	 * @return The locked study.
 	 */
-	private synchronized Subject doAssign(SubjectDTO subjectDTO, Study study) throws RandimiException {
+	private Study lockStudy(final Study study) {
+		// Flush pending changes of the current transaction, otherwise the refresh below would discard them.
+		entityManager.flush();
+		entityManager.lock(study, LockModeType.PESSIMISTIC_WRITE);
+		// The refresh also cascades to the sites and subject lists that were loaded before the lock was acquired.
+		// Refreshing with the lock mode fails, since Hibernate cannot lock the joined minimization parameter.
+		entityManager.refresh(study);
+		return study;
+	}
+
+	private Subject doAssign(SubjectDTO subjectDTO, Study study) throws RandimiException {
 		if (study.getStatus() == StudyStatus.LOCKED) {
 			throw exceptionService.notAcceptableStudyLocked(study);
 		}
@@ -258,7 +281,7 @@ public class RandomizationService {
 
 			auditService.createAuditEntryCreateSubject(subject);
 		} else {
-			Randomization randomization = getAlgorithmImplementation(study.getRandomizationAlgorithm());
+			Randomization randomization = getAlgorithmImplementation(study);
 			final StudyArm studyArm = randomization.getRandomStudyArm(site, subjectList);
 
 			subject = new Subject(subjectList.getSubjects().size() + 1, studyArm);
@@ -281,7 +304,7 @@ public class RandomizationService {
 	 * @return study
 	 * @throws RandimiException if the study id is invalid (null or non-existent).
 	 */
-	private Study getStudyByApiIdOrThrow(final String studyApiId) throws RandimiException {
+	private Study getStudyByApiIdOrThrow(@Nullable final String studyApiId) throws RandimiException {
 		if (studyApiId == null || studyApiId.isBlank()) {
 			throw exceptionService.missingParameterStudyId();
 		}
@@ -294,7 +317,7 @@ public class RandomizationService {
 		return study.get();
 	}
 
-	private Study getStudyByIdOrThrow(final Long studyId) throws RandimiException {
+	private Study getStudyByIdOrThrow(@Nullable final Long studyId) throws RandimiException {
 		if (studyId == null) {
 			throw exceptionService.missingParameterStudyId();
 		}
@@ -430,36 +453,51 @@ public class RandomizationService {
 	}
 
 	/**
-	 * Returns the service for the given randomization algorithm.
-	 * Throws an exception in the language of the given locale if no corresponding service can be found.
+	 * Returns the service for the randomization algorithm and its version used by the given study.
 	 *
-	 * @param algorithm The algorithm to look for.
+	 * @param study The study to look for.
 	 * @return The service for the randomization algorithm.
 	 * @throws RandimiException If no service could be found.
 	 */
-	public Randomization getAlgorithmImplementation(RandomizationAlgorithm algorithm)
-			throws RandimiException {
-		Randomization randomization = doGetAlgorithmImplementationIntern(algorithm);
-
-		if (randomization == null)
-			throw exceptionService.unknownAlgorithm(algorithm.name());
-
-		return randomization;
+	public Randomization getAlgorithmImplementation(Study study) throws RandimiException {
+		return getAlgorithmImplementation(study.getRandomizationAlgorithm(), study.getRandomizationAlgorithmVersion());
 	}
 
-	private Randomization doGetAlgorithmImplementationIntern(RandomizationAlgorithm algorithm) {
-		Randomization randomization = null;
-
+	/**
+	 * Returns the service for the given version of the randomization algorithm.
+	 *
+	 * @param algorithm The algorithm to look for.
+	 * @param version   The version of the algorithm.
+	 * @return The service for the randomization algorithm.
+	 * @throws RandimiException If no service could be found.
+	 */
+	public Randomization getAlgorithmImplementation(RandomizationAlgorithm algorithm, int version)
+			throws RandimiException {
 		for (Randomization implementation : availableAlgorithms) {
-			if (implementation.getAlgorithm() == algorithm) {
-				randomization = implementation;
+			if (implementation.getAlgorithm() == algorithm && implementation.getVersion() == version) {
+				return implementation;
 			}
 		}
 
-		return randomization;
+		throw exceptionService.unknownAlgorithm(algorithm.name() + " (version " + version + ")");
 	}
 
-	private Map<String, String> convertJsonToMap(String json) throws RandimiException {
+	/**
+	 * Returns the latest version of the given randomization algorithm.
+	 *
+	 * @param algorithm The algorithm to look for.
+	 * @return The latest version of the algorithm.
+	 * @throws IllegalArgumentException If no service could be found.
+	 */
+	public int getLatestAlgorithmVersion(RandomizationAlgorithm algorithm) {
+		return availableAlgorithms.stream()
+		                          .filter(implementation -> implementation.getAlgorithm() == algorithm)
+		                          .mapToInt(Randomization::getVersion)
+		                          .max()
+		                          .orElseThrow(() -> new IllegalArgumentException("Unknown algorithm " + algorithm));
+	}
+
+	private Map<String, String> convertJsonToMap(@Nullable String json) throws RandimiException {
 		if (json == null || json.trim().isEmpty()) {
 			json = "{}";
 		}

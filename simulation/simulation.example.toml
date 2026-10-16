@@ -1,0 +1,29 @@
+# Copy this file to simulation.toml and adjust it.
+
+# Credentials of the API user.
+username = "api"
+password = "changeme"
+
+# Seed for the order in which the subjects are randomized and for the seeds of the sites without a configured
+# seed. Replication i uses seed + i, so a run with the same seed and configurations is reproducible.
+seed = 0
+# Number of times each study is created and filled. The analysis needs many replications (hundreds or more).
+replications = 1
+# Number of threads sending subjects in parallel. With one thread the order is deterministic,
+# which the sequence metrics of analyze.py (e.g., predictability) rely on.
+threads = 2
+# Number of studies simulated in parallel. Each study is still filled by its own threads, so this does not change
+# the order within a study, only the run time. RandIMI uses at most 10 database connections by default, so keep
+# workers * threads at or below 10.
+workers = 1
+# Delete each study after its assignments have been downloaded. The studies are activated, so they are archived
+# and then marked as deleted. Disable this to inspect the studies in RandIMI.
+delete = true
+
+# Each entry references a study configuration in the studies directory.
+# The configurations use the format of the request body of POST /api/v2/study.
+studies = [
+    "blocked.example.json",
+    "minimization.example.json",
+    "cointoss.example.json",
+]

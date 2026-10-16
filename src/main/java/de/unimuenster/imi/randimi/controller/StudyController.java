@@ -5,7 +5,6 @@ import de.unimuenster.imi.randimi.dto.ChangeReason;
 import de.unimuenster.imi.randimi.dto.settings.PseudonymRegexDTO;
 import de.unimuenster.imi.randimi.dto.study.*;
 import de.unimuenster.imi.randimi.dto.study.stratum.StratumDTO;
-import de.unimuenster.imi.randimi.dto.study.stratum.StratumPartBaseDTO;
 import de.unimuenster.imi.randimi.dto.study.user.AddStudyUsersDTO;
 import de.unimuenster.imi.randimi.dto.study.user.RemoveStudyUserDTO;
 import de.unimuenster.imi.randimi.dto.study.user.StudyUserDTO;
@@ -46,12 +45,12 @@ import de.unimuenster.imi.randimi.validator.study.StudyDTOValidator;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -79,8 +78,6 @@ import java.util.*;
 public class StudyController {
 
 	private static final Logger LOGGER = LogManager.getLogger(StudyController.class);
-
-	public static final String STRATUM_NAME_LOCATION = "location";
 
 	private static final String ADD_STUDY_USERS_DTO_KEY = "addStudyUsersDTO";
 	protected static final String ARCHIVE_STUDY_DTO_KEY = "archiveStudyDTO";
@@ -114,10 +111,9 @@ public class StudyController {
 	private final StratumCodeService stratumCodeService;
 	private final StringUtils stringUtils;
 	private final StudyService studyService;
-	private final StudyUtilityService studyUtilityService;
 
 	public StudyController(final StudyRepository studyRepository, final MessageService messageService,
-	                       final StudyUtilityService studyUtilityService, final SubjectRepository subjectRepository,
+	                       final SubjectRepository subjectRepository,
 	                       final StratumCodeService stratumCodeService, final SettingsRepository settingsRepository,
 	                       final RandimiUserRepository userRepository, final StringUtils stringUtils,
 	                       final StudyService studyService, final AclEntryRepository aclEntryRepository,
@@ -134,7 +130,6 @@ public class StudyController {
 		this.auditEntryRepository = auditEntryRepository;
 		this.settingsRepository = settingsRepository;
 		this.studyRepository = studyRepository;
-		this.studyUtilityService = studyUtilityService;
 		this.subjectRepository = subjectRepository;
 		this.userRepository = userRepository;
 
@@ -308,64 +303,8 @@ public class StudyController {
 			return "redirect:/studies";
 		}
 
-		boolean inactive = isNewStudyOrNotActivated(studyDTO);
-
 		// Remove empty study arms, strata and stratum parts if it could be modified
-		if (inactive) {
-			studyDTO.getStudyArms().removeIf(StudyArmDTO::isFormEmpty);
-
-			for (StratumDTO stratumDTO : studyDTO.getEnumeratedStratums()) {
-				stratumDTO.getStratumParts().removeIf(StratumPartBaseDTO::isEmptyEnum);
-			}
-			studyDTO.getEnumeratedStratums().removeIf(StratumDTO::isFormEmpty);
-
-			for (StratumDTO stratumDTO : studyDTO.getIntervalStratums()) {
-				stratumDTO.getStratumParts().removeIf(StratumPartBaseDTO::isEmptyInterval);
-			}
-			studyDTO.getIntervalStratums().removeIf(StratumDTO::isFormEmpty);
-		}
-
-		// Remove deleted sites
-		studyDTO.getSites().removeIf(SiteDTO::isFormEmpty);
-
-		// Set default values and order numbers
-		int orderNumber = 0;
-		for (SiteDTO site : studyDTO.getSites()) {
-			site.setOrderNumber(orderNumber);
-			orderNumber += 1;
-
-			if (site.getSeed() == null) {
-				site.setSeed(System.currentTimeMillis());
-			}
-			if (site.getPseudonymRegex() == null || site.getPseudonymRegex().isBlank()) {
-				site.setPseudonymRegex(".*");
-			}
-		}
-
-		orderNumber = 0;
-		for (StudyArmDTO studyArm : studyDTO.getStudyArms()) {
-			studyArm.setOrderNumber(orderNumber);
-			orderNumber += 1;
-
-			if (studyArm.getRatio() == null) {
-				studyArm.setRatio(1);
-			}
-		}
-
-		orderNumber = 0;
-		for (final StratumDTO stratumDTO : studyDTO.getEnumeratedStratums()) {
-			stratumDTO.setOrderNumber(orderNumber);
-			orderNumber += 1;
-
-			int partOrderNumber = 0;
-			for (final StratumPartBaseDTO stratumPartBaseDTO : stratumDTO.getStratumParts()) {
-				stratumPartBaseDTO.setOrderNumber(partOrderNumber);
-				partOrderNumber += 1;
-			}
-		}
-
-		// Simplify ratios
-		studyUtilityService.simplifyStudyArmRatios(studyDTO);
+		studyService.prepareStudyDTO(studyDTO, isNewStudyOrNotActivated(studyDTO));
 
 		// Validate
 		studyDTOValidator.validate(studyDTO, studyResult);
@@ -373,22 +312,19 @@ public class StudyController {
 			return backToEditDueToError(studyDTO, studyDTO.getOriginalApiId(), changeReason, redirectAttributes, studyResult, changeReasonResult);
 		}
 
-		if (studyDTO.isStratifyBySite()) {
-			// location stratum is missing after every edit
-			final StratumDTO locationStratum = createAndGetLocationStratum(studyDTO);
-			addLocationStratumPart(studyDTO.getSites(), locationStratum);
-		}
+		RandimiUser currentUser = ((MyUserDetails) SecurityContextHolder.getContext().getAuthentication()
+		                                                                .getPrincipal()).getUser();
 
-		// Get the right study or create a new one if the study does not exist
 		final Study study;
-		final List<Site> originalSites;
-
 		if (changeReason == null) {
-			study = studyMapper.toStudy(studyDTO, new Study());
-			originalSites = new ArrayList<>();
+			// Create a new study
+			study = studyService.createStudy(studyDTO, currentUser);
 		} else {
+			// Update the existing study
+			studyService.addSiteStratum(studyDTO);
+
 			final Study original = studyRepository.findById(studyDTO.getId()).get();
-			originalSites = new ArrayList<>(original.getSites());
+			final List<Site> originalSites = new ArrayList<>(original.getSites());
 
 			if (messageService.checkStudyStatus(List.of(StudyStatus.ARCHIVED, StudyStatus.DELETED), original, redirectAttributes)) {
 				return "redirect:/studies";
@@ -424,72 +360,17 @@ public class StudyController {
 					return "redirect:/studies";
 				}
 			}
-		}
 
-		// Persist or update the study
-		studyRepository.save(study);
+			// Update the study
+			studyRepository.save(study);
 
-		// Set missing fields in studyDTO for audit entry
-		studyDTO.setStatus(study.getStatus());
-		studyDTO.setActivationDate(study.getActivationDate());
+			// Set missing fields in studyDTO for audit entry
+			studyDTO.setStatus(study.getStatus());
+			studyDTO.setActivationDate(study.getActivationDate());
 
-		RandimiUser currentUser = ((MyUserDetails) SecurityContextHolder.getContext().getAuthentication()
-		                                                                .getPrincipal()).getUser();
-		currentUser = userRepository.findById(currentUser.getId()).get();
+			currentUser = userRepository.findById(currentUser.getId()).get();
+			studyService.updateSiteAclIdentities(study, originalSites, currentUser);
 
-		// Update ACL identities for the study
-		if (changeReason == null) {
-
-			// Persist the acl object identity if the study is new
-			final AclObjectIdentity aclObjectIdentity = new AclObjectIdentity(study.getId(), Boolean.TRUE,
-			                                                                  aclClassRepository.findFirstByClassNameOrSynonym(
-					                                                                  Study.class.getName(),
-					                                                                  StudyDTO.class.getName()),
-			                                                                  currentUser.getAclSid(), null);
-			aclObjectIdentityRepository.save(aclObjectIdentity);
-
-			// Set initial permissions
-			if (!currentUser.hasUserRole(UserRoles.ROLE_ADMIN)) {
-				study.addAssignedUser(currentUser);
-
-				// Iterate over all bundles for study permissions and cross-site permissions
-				for (PermissionBundle permissionBundle : PermissionBundle.values()) {
-					for (PermissionType permissionType : PermissionBundle.getPermissionTypes(permissionBundle))
-						applyStudyPermission(permissionType, currentUser.getAclSid(), aclObjectIdentity);
-				}
-			}
-		}
-
-		// Update ACL identities for sites
-		final AclClass siteAclClass = aclClassRepository.findFirstByClassNameOrSynonym(Site.class.getName(),
-		                                                                               SiteDTO.class.getName());
-
-		final List<Site> currentSites = study.getSites();
-
-		for (final Site site : currentSites) {
-			final boolean isNewSite = originalSites.stream().noneMatch(a -> Objects.equals(a.getId(), site.getId()));
-			if (isNewSite) {
-				AclObjectIdentity siteAclObjectIdentity = new AclObjectIdentity(site.getId(), Boolean.TRUE,
-				                                                                siteAclClass, currentUser.getAclSid(),
-				                                                                null);
-				aclObjectIdentityRepository.save(siteAclObjectIdentity);
-			}
-		}
-
-		for (final Site site : originalSites) {
-			final boolean isDeletedSite = currentSites.stream().noneMatch(a -> Objects.equals(a.getId(), site.getId()));
-			if (isDeletedSite) {
-				final AclObjectIdentity siteAclObjectIdentity = aclObjectIdentityRepository
-						.findFirstByObjectIdClassAndObjectIdIdentity(siteAclClass, site.getId());
-				aclEntryRepository.deleteByAclObjectIdentity(siteAclObjectIdentity);
-				aclObjectIdentityRepository.delete(siteAclObjectIdentity);
-			}
-		}
-
-		// Create audit entry
-		if (changeReason == null) {
-			auditService.createAuditEntryCreateStudy(studyDTO, study.getId());
-		} else {
 			auditService.createAuditEntryUpdateStudy(studyDTO, study.getId(), changeReason);
 		}
 
@@ -510,28 +391,6 @@ public class StudyController {
 	@PreAuthorize("isAuthenticated()")
 	public String generateApiId() {
 		return studyService.generateApiId();
-	}
-
-	private StratumDTO createAndGetLocationStratum(final StudyDTO studyDTO) {
-		final StratumDTO locationStratum = new StratumDTO();
-		locationStratum.setGuiName(STRATUM_NAME_LOCATION);
-		locationStratum.setApiId(STRATUM_NAME_LOCATION);
-		locationStratum.setUseApiId(false);
-		locationStratum.setOrderNumber(studyDTO.getEnumeratedStratums().size());
-		locationStratum.setStratumType(StratumType.SITE);
-		locationStratum.setStratumParts(new ArrayList<>());
-
-		studyDTO.setSiteStratum(locationStratum);
-		return locationStratum;
-	}
-
-	private void addLocationStratumPart(final List<SiteDTO> sites, final StratumDTO locationStratum) {
-		for (final SiteDTO site : sites) {
-			final StratumPartBaseDTO sitePart = new StratumPartBaseDTO();
-			sitePart.setOrderNumber(locationStratum.getStratumParts().size());
-			sitePart.setSite(site);
-			locationStratum.getStratumParts().add(sitePart);
-		}
 	}
 
 	/**
@@ -1207,7 +1066,7 @@ public class StudyController {
 			}
 
 			for (PermissionType permissionType : studyPermissions)
-				applyStudyPermission(permissionType, user.getAclSid(), studyAclObjectIdentity);
+				studyService.applyStudyPermission(permissionType, user.getAclSid(), studyAclObjectIdentity);
 		}
 		return "redirect:/studies";
 	}
@@ -1232,31 +1091,6 @@ public class StudyController {
 			case UPDATE_STUDY:
 			case UPDATE_STUDY_USERS:
 				studyPermissions.add(permissionType);
-				break;
-			default:
-				LOGGER.warn("Unhandled permission type {}!", permissionType.getValue());
-				break;
-		}
-	}
-
-	private void applyStudyPermission(final PermissionType permissionType, final AclSid aclSid,
-			final AclObjectIdentity studyAclObjectIdentity) {
-		switch (permissionType) {
-			// Permissions for study
-			case CREATE_SUBJECT:
-			case DELETE_STUDY:
-			case DELETE_SUBJECT:
-			case GET_NOTIFICATION:
-			case READ_AUDIT_COMPLEX:
-			case READ_AUDIT_SIMPLE:
-			case READ_REPORT:
-			case READ_STUDY:
-			case READ_SUBJECT:
-			case UPDATE_STUDY:
-			case UPDATE_STUDY_USERS:
-			case UPDATE_SUBJECT:
-				aclEntryRepository
-						.save(new AclEntry(aclSid, studyAclObjectIdentity, 1, permissionType, true, false, false));
 				break;
 			default:
 				LOGGER.warn("Unhandled permission type {}!", permissionType.getValue());

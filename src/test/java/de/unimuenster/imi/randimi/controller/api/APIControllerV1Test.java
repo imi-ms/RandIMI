@@ -27,7 +27,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
     public void noAuthorizationTest() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders
                                 .get("/api/v1/getApiVersion")
-                                .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                                .contentType(MediaType.APPLICATION_JSON))
                .andExpect(status().isForbidden())
                .andExpect(jsonPath("detail").value("Access Denied"));
     }
@@ -36,7 +36,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
     public void getAPIVersionTest() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/v1/getApiVersion")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1.0"));
     }
@@ -45,7 +45,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
     public void getAPIVersionAlternatePathTest() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/getApiVersion")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1.0"));
     }
@@ -56,7 +56,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                                 .get("/api/v1/getStudyStrataNames")
-                                .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .param("studyId", inactiveStudy.getApiId()))
                .andExpect(status().isForbidden())
                .andExpect(jsonPath("status").value(403))
@@ -80,7 +80,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/v1/getStudyStrataNames")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .param("studyId", activeStudy.getApiId()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("[\"" + activeStudy.getStratums().get(0).getApiId() + "\",\""
@@ -95,7 +95,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                                 .get("/api/v1/getStudyStrataInfo")
-                                .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .param("studyId", activeStudy.getApiId()))
                .andExpect(status().isOk())
                .andExpect(content().json(
@@ -119,7 +119,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                                 .post("/api/v1/randomizePatient")
-                                .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(randomizePatientRequestBodyV1)))
                .andExpect(status().isForbidden())
                .andExpect(jsonPath("status").value(403))
@@ -144,7 +144,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         final String studyArm = mockMvc.perform(MockMvcRequestBuilders
                         .post("/api/v1/randomizePatient")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(randomizePatientRequestBodyV1)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("First arm of active study"))
@@ -190,7 +190,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/v1/fetchAssignment")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .param("studyId", activeStudy.getApiId())
                         .param("location", secondtSite.getApiId())
                         .param("pseudonym", "pseudonym2"))
@@ -206,7 +206,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/v1/fetchAssignment")
-                        .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .param("studyId", activeStudy.getApiId())
                         .param("location", firstSite.getApiId())
                         .param("pseudonym", "pseudonym1"))
@@ -224,7 +224,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/fetchAssignment")
                                               .header("accept-language", "en-US")
-                                              .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                              .contentType(MediaType.APPLICATION_JSON)
                                               .param("studyId", activeStudy.getApiId())
                                               .param("location", firstSite.getApiId())
                                               .param("pseudonym", pseudonym))
@@ -242,7 +242,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/fetchAssignment")
                                               .header("accept-language", "en-US")
-                                              .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                              .contentType(MediaType.APPLICATION_JSON)
                                               .param("studyId", activeStudy.getApiId())
                                               .param("location", firstSite.getApiId())
                                               .param("pseudonym", pseudonym))
@@ -260,7 +260,7 @@ public class APIControllerV1Test extends APIControllerTestBase {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/fetchAssignment")
                                               .header("accept-language", "de-DE")
-                                              .contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+                                              .contentType(MediaType.APPLICATION_JSON)
                                               .param("studyId", activeStudy.getApiId())
                                               .param("location", firstSite.getApiId())
                                               .param("pseudonym", pseudonym))

@@ -1,0 +1,11 @@
+# Configurations
+simulation.toml
+/studies/*.json
+!/studies/*.example.json
+
+# Results
+/results
+
+# Python
+__pycache__
+.venv

@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -23,6 +24,7 @@ public class StudyArmDTO extends NamesDTO {
 
 	private int orderNumber = 0;
 
+	@Nullable
 	private Integer ratio;
 
 	/**

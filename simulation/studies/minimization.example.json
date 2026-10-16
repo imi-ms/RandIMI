@@ -1,0 +1,37 @@
+{
+  "name": "Simulation Minimization",
+  "pseudonymHandling": "UNIQUE_IN_STUDY",
+  "capacity": 100,
+  "stratifyBySite": false,
+  "sites": [
+    {"name": "Site A", "apiId": "a", "capacity": 50, "pseudonymRegex": ".*"},
+    {"name": "Site B", "apiId": "B", "capacity": 50, "pseudonymRegex": ".*"}
+  ],
+  "arms": [
+    {"name": "Intervention", "ratio": 1},
+    {"name": "Control", "ratio": 1}
+  ],
+  "strata": [
+    {
+      "name": "Sex",
+      "values": [
+        {"name": "Female", "apiId": "F"},
+        {"name": "Male", "apiId": "M"}
+      ]
+    },
+    {
+      "name": "Age",
+      "values": [
+        {"name": "18-30", "apiId": "A"},
+        {"name": "31-50", "apiId": "B"},
+        {"name": "50-70", "apiId": "C"}
+      ]
+    }
+  ],
+  "randomization": {
+    "algorithm": "MINIMIZATION",
+    "forceRatio": true,
+    "imbalanceBias": 0.7,
+    "imbalanceFunction": "VARIANCE"
+  }
+}

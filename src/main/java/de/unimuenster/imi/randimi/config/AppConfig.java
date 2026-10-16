@@ -12,7 +12,7 @@ import jakarta.servlet.ServletContext;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.*;
@@ -69,10 +69,10 @@ public class AppConfig {
 	}
 
 	@Bean
-	public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-		return jackson2ObjectMapperBuilder -> {
-			jackson2ObjectMapperBuilder.timeZone(TimeZone.getDefault());
-			jackson2ObjectMapperBuilder.dateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+	public JsonMapperBuilderCustomizer jsonMapperBuilderCustomizer() {
+		return jsonMapperBuilder -> {
+			jsonMapperBuilder.defaultTimeZone(TimeZone.getDefault());
+			jsonMapperBuilder.defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 		};
 	}
 
@@ -97,7 +97,7 @@ public class AppConfig {
 			var accept = request.getHeader("Accept-Language");
 
 			if (accept != null) {
-				accept = accept.replaceAll("_", "-");
+				accept = accept.replace("_", "-");
 
 				List<Locale.LanguageRange> list = Locale.LanguageRange.parse(accept);
 				var locale = Locale.lookup(list, SupportedLanguage.getSupportedLocals());

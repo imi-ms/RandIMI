@@ -8,9 +8,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,8 +54,7 @@ public class Stratum extends NamedEntity {
 	 * List of parts associated to this stratum.
 	 * Can be of type interval (float) or of type enumeration (String)
 	 */
-	@OneToMany(fetch = FetchType.EAGER, mappedBy="stratum", orphanRemoval = true)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(fetch = FetchType.EAGER, mappedBy="stratum", orphanRemoval = true, cascade = {CascadeType.ALL})
     @OrderBy("orderNumber")
 	@Setter
 	private List<StratumPartBase> stratumParts = new ArrayList<>();

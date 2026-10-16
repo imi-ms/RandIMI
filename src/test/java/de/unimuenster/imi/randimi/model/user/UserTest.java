@@ -70,7 +70,7 @@ public class UserTest {
 	public void testGetAndSetEmail() {
 		String testEmail = Helper.getRandomMailAddress();
 		user.setEMail(testEmail);
-		assertEquals(testEmail, user.getEMail(), "The mail address returned was not the one expected.");
+		assertEquals(testEmail.toLowerCase(), user.getEMail(), "The mail address returned was not the one expected.");
 	}
 
 	@Test

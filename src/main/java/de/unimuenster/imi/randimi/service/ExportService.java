@@ -1,12 +1,5 @@
 package de.unimuenster.imi.randimi.service;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.dataformat.csv.CsvFactory;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.unimuenster.imi.randimi.dto.Views;
 import de.unimuenster.imi.randimi.dto.subject.SubjectEntryDTO;
 import de.unimuenster.imi.randimi.mapping.subject.SubjectEntryMapper;
@@ -20,10 +13,16 @@ import de.unimuenster.imi.randimi.model.subject.SubjectList;
 import de.unimuenster.imi.randimi.model.user.RandimiUser;
 import de.unimuenster.imi.randimi.repository.user.AclEntryRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
+import tools.jackson.core.StreamWriteFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -40,7 +39,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ExportService {
 
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
 	private final AclEntryRepository aclEntryRepository;
 
@@ -50,10 +49,10 @@ public class ExportService {
 	private final StratumCodeService stratumCodeService;
 
 	@Autowired
-	public ExportService(final ObjectMapper objectMapper, final AclEntryRepository aclEntryRepository,
+	public ExportService(final JsonMapper jsonMapper, final AclEntryRepository aclEntryRepository,
 	                     final SubjectEntryMapper subjectEntryMapper,
 	                     final AuditService auditService, final StratumCodeService stratumCodeService) {
-		this.objectMapper = objectMapper;
+		this.jsonMapper = jsonMapper;
 		this.aclEntryRepository = aclEntryRepository;
 		this.subjectEntryMapper = subjectEntryMapper;
 		this.auditService = auditService;
@@ -238,9 +237,9 @@ public class ExportService {
 
 				final SubjectEntryDTO subjectEntryDTO = subjectEntryMapper.toSubjectEntryDTO(subject);
 
-				for (final StratumPartBase stratum : subjectListModel.getStratumParts()) {
-					subjectEntryDTO.getStrata().put(stratum.getStratum().getName(), stratum.getName());
-				}
+//				for (final StratumPartBase stratum : subjectListModel.getStratumParts()) {
+//					subjectEntryDTO.getStrata().put(stratum.getStratum().getName(), stratum.getName());
+//				}
 
 				subjectEntryDTOS.add(subjectEntryDTO);
 			}
@@ -263,12 +262,13 @@ public class ExportService {
 			strataBuilder.addColumn(stratum.getName());
 		}
 
-		final CsvFactory csvFactory =  new CsvFactory();
-		csvFactory.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-		final CsvMapper mapper = new CsvMapper(csvFactory);
-		mapper.registerModule(new JavaTimeModule());
-		mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-		final CsvSchema schema = mapper.schemaForWithView(SubjectEntryDTO.class, includeApiIds ? Views.ApiId.class : Views.Default.class)
+		final CsvMapper mapper = CsvMapper.builder()
+		                                  .enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+		                                  .disable(StreamWriteFeature.AUTO_CLOSE_TARGET)
+		                                  .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"))
+		                                  .build();
+		final CsvSchema schema = mapper.schemaForWithView(SubjectEntryDTO.class,
+		                                                  includeApiIds ? Views.ApiId.class : Views.Default.class)
 		                               .withColumnsFrom(strataBuilder.build())
 		                               .withColumnSeparator(delimiter)
 		                               .withLineSeparator("\r\n")
@@ -282,7 +282,7 @@ public class ExportService {
 	 * @return The ObjectWriter.
 	 */
 	private ObjectWriter getJsonWriter() {
-		return objectMapper.writer().withDefaultPrettyPrinter().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+		return jsonMapper.writer().withDefaultPrettyPrinter().without(StreamWriteFeature.AUTO_CLOSE_TARGET);
 	}
 
 	/**

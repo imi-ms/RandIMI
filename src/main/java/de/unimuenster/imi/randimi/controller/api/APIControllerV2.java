@@ -1,15 +1,17 @@
 package de.unimuenster.imi.randimi.controller.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import de.unimuenster.imi.randimi.dto.ChangeReason;
+import de.unimuenster.imi.randimi.dto.study.DeleteStudyDTO;
+import de.unimuenster.imi.randimi.dto.study.StudyDTO;
 import de.unimuenster.imi.randimi.dto.study.statistics.SubjectSeriesDTO;
 import de.unimuenster.imi.randimi.dto.study.statistics.SubjectSeriesParameterDTO;
 import de.unimuenster.imi.randimi.dto.subject.SubjectEntryDTO;
+import de.unimuenster.imi.randimi.mapping.study.StudyConfigurationMapper;
 import de.unimuenster.imi.randimi.mapping.study.StudyMapper;
 import de.unimuenster.imi.randimi.mapping.study.stratum.StratumMapper;
 import de.unimuenster.imi.randimi.mapping.subject.SubjectEntryMapper;
 import de.unimuenster.imi.randimi.model.api.*;
+import de.unimuenster.imi.randimi.model.api.configuration.StudyConfiguration;
 import de.unimuenster.imi.randimi.model.enumeration.StratumType;
 import de.unimuenster.imi.randimi.model.study.Study;
 import de.unimuenster.imi.randimi.model.study.stratum.Stratum;
@@ -21,6 +23,7 @@ import de.unimuenster.imi.randimi.repository.subject.SubjectListRepository;
 import de.unimuenster.imi.randimi.service.*;
 import de.unimuenster.imi.randimi.exceptions.RandimiException;
 import de.unimuenster.imi.randimi.repository.subject.SubjectRepository;
+import de.unimuenster.imi.randimi.validator.study.StudyDTOValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.*;
@@ -31,6 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,7 +42,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.*;
@@ -78,13 +88,14 @@ public class APIControllerV2 {
 	 */
 	public static final String API_VERSION = "2.0";
 
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
 	private final StudyRepository studyRepository;
 	private final SubjectRepository subjectRepository;
 	private final SubjectListRepository subjectListRepository;
 
 	private final StratumMapper stratumMapper;
+	private final StudyConfigurationMapper studyConfigurationMapper;
 	private final StudyMapper studyMapper;
 	private final SubjectEntryMapper subjectMapper;
 
@@ -94,21 +105,27 @@ public class APIControllerV2 {
 	private final RandomizationService randomizationService;
 	private final RandimiExceptionFactoryService exceptionService;
 	private final StatisticsService statisticsService;
+	private final StudyService studyService;
+
+	private final StudyDTOValidator studyDTOValidator;
 
 	@Autowired
-	public APIControllerV2(final ObjectMapper objectMapper, final StudyRepository studyRepository,
+	public APIControllerV2(final JsonMapper jsonMapper, final StudyRepository studyRepository,
 	                       final SubjectRepository subjectRepository, final SubjectListRepository subjectListRepository,
-	                       final StratumMapper stratumMapper, final StudyMapper studyMapper,
+	                       final StratumMapper stratumMapper,
+	                       final StudyConfigurationMapper studyConfigurationMapper, final StudyMapper studyMapper,
 	                       final SubjectEntryMapper subjectMapper, final AuditService auditService,
 	                       final ExportService exportService, final MessageService messageService,
 	                       final RandomizationService randomizationService,
 	                       final RandimiExceptionFactoryService randimiExceptionFactoryService,
-	                       final StatisticsService statisticsService) {
-		this.objectMapper = objectMapper;
+	                       final StatisticsService statisticsService, final StudyService studyService,
+	                       final StudyDTOValidator studyDTOValidator) {
+		this.jsonMapper = jsonMapper;
 		this.studyRepository = studyRepository;
 		this.subjectRepository = subjectRepository;
 		this.subjectListRepository = subjectListRepository;
 		this.stratumMapper = stratumMapper;
+		this.studyConfigurationMapper = studyConfigurationMapper;
 		this.studyMapper = studyMapper;
 		this.subjectMapper = subjectMapper;
 		this.auditService = auditService;
@@ -117,6 +134,8 @@ public class APIControllerV2 {
 		this.randomizationService = randomizationService;
 		this.exceptionService = randimiExceptionFactoryService;
 		this.statisticsService = statisticsService;
+		this.studyService = studyService;
+		this.studyDTOValidator = studyDTOValidator;
 	}
 
 	//--------------------//
@@ -337,7 +356,7 @@ public class APIControllerV2 {
 			@Parameter(description = "API ID of the study", required = true)
 			@PathVariable(value = "studyApiId") String studyApiId,
 			@Parameter(description = "Numerical ID of the subject-list", required = false)
-			@PathVariable(value = "subjectListId", required = false) final Long subjectListId,
+			@PathVariable(value = "subjectListId", required = false) @Nullable final Long subjectListId,
 			@ParameterObject @Valid final SubjectExportRequest requestParams,
 			@AuthenticationPrincipal final MyUserDetails currentUserDetails,
 			final HttpServletResponse response
@@ -376,8 +395,8 @@ public class APIControllerV2 {
 		// Transform strata
 		Map<String, Set<String>> strata;
 		try {
-			strata = objectMapper.readValue(requestParams.getStrata(), new TypeReference<>() { });
-		} catch (JsonProcessingException e) {
+			strata = jsonMapper.readValue(requestParams.getStrata(), new TypeReference<>() { });
+		} catch (final JacksonException e) {
 			throw exceptionService.malformedParameterStratum("strata");
 		}
 		Set<String> invalidStrataApiIds = new HashSet<>();
@@ -431,6 +450,243 @@ public class APIControllerV2 {
 	//---------------------//
 	//    POST-Requests    //
 	//---------------------//
+
+	/**
+	 * Creates a new study.
+	 * <p>
+	 * The configuration is converted into a {@link StudyDTO} and validated with the same rules as studies created in
+	 * the frontend. The creating user gets all study permissions, unless the user is an admin.
+	 *
+	 * @param studyConfiguration Configuration of the new study.
+	 * @param currentUserDetails User of the request.
+	 * @return The created study.
+	 * @throws RandimiException If the configuration is invalid.
+	 */
+	@Operation(summary = "Create a new study.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201",
+			             description = "Created. Response contains a study resource describing the structure of the created study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = StudyResource.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "Bad Request. The study configuration is missing, malformed or invalid. See validationErrors for more details.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "Forbidden. The user has no permissions to use the API or to create studies.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PreAuthorize("hasAnyRole(T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_ADMIN, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_LOCAL_MANAGER, T(de.unimuenster.imi.randimi.model.enumeration.UserRoles).ROLE_STUDY_MANAGER)")
+	@PostMapping(value = "/study",
+	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(HttpStatus.CREATED)
+	@Transactional
+	public StudyResource createStudy(
+			@Parameter(description = "Configuration of the new study.", required = true)
+			@Valid @RequestBody final StudyConfiguration studyConfiguration,
+			@AuthenticationPrincipal final MyUserDetails currentUserDetails
+	) throws RandimiException {
+		final StudyDTO studyDTO = studyConfigurationMapper.toStudyDTO(studyConfiguration);
+		studyService.prepareStudyDTO(studyDTO, true);
+
+		final Errors errors = new BeanPropertyBindingResult(studyDTO, "studyConfiguration");
+		studyDTOValidator.validate(studyDTO, errors);
+		if (errors.hasErrors()) {
+			throw exceptionService.unsatisfyingParameterStudyConfiguration(errors,
+			                                                               studyConfigurationMapper::toConfigurationPath);
+		}
+
+		final Study study = studyService.createStudy(studyDTO, currentUserDetails.getUser());
+		return studyMapper.toStudyResource(study);
+	}
+
+	/**
+	 * Activates a study.
+	 * <p>
+	 * Only studies that are newly created or in test mode can be activated. Subjects from the test mode are removed
+	 * and the subject lists are generated.
+	 *
+	 * @param studyApiId API ID of the study to activate.
+	 * @return The activated study.
+	 * @throws RandimiException If the study does not exist or cannot be activated.
+	 */
+	@Operation(summary = "Activate a study.",
+	           description = "Only studies that are newly created or in test mode can be activated. Subjects assigned in test mode are removed.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200",
+			             description = "OK. Response contains a study resource describing the structure of the activated study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = StudyResource.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "Forbidden. The user has no permissions to use the API or to update the study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "406",
+			             description = "Not Acceptable. No study with the given API ID could be found or the study has already been activated.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "Internal Server Error. Something went wrong in the server.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)")
+	@PostMapping(value = "/study/{studyApiId}/activate", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Transactional
+	public StudyResource activateStudy(
+			@PathVariable @Parameter(description = "API ID of the study", required = true) final String studyApiId
+	) throws RandimiException {
+		final Study study = studyRepository.findByApiId(studyApiId).orElse(null);
+		if (study == null || study.isDeleted()) {
+			throw exceptionService.notAcceptableMissingStudy(studyApiId);
+		}
+
+		studyService.activateStudy(study);
+		return studyMapper.toStudyResource(study);
+	}
+
+	/**
+	 * Puts a study into test mode.
+	 * <p>
+	 * Only studies that are newly created or already in test mode can be put into test mode. If the study is already
+	 * in test mode, the subjects assigned in test mode are removed.
+	 *
+	 * @param studyApiId API ID of the study to put into test mode.
+	 * @return The study in test mode.
+	 * @throws RandimiException If the study does not exist or has already been activated.
+	 */
+	@Operation(summary = "Put a study into test mode.",
+	           description = "Only studies that are newly created or in test mode can be put into test mode. If the study is already in test mode, the subjects assigned in test mode are removed.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200",
+			             description = "OK. Response contains a study resource describing the structure of the study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = StudyResource.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "Forbidden. The user has no permissions to use the API or to update the study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "406",
+			             description = "Not Acceptable. No study with the given API ID could be found or the study has already been activated.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "Internal Server Error. Something went wrong in the server.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)")
+	@PostMapping(value = "/study/{studyApiId}/test", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Transactional
+	public StudyResource testStudy(
+			@PathVariable @Parameter(description = "API ID of the study", required = true) final String studyApiId
+	) throws RandimiException {
+		final Study study = studyRepository.findByApiId(studyApiId).orElse(null);
+		if (study == null || study.isDeleted()) {
+			throw exceptionService.notAcceptableMissingStudy(studyApiId);
+		}
+
+		studyService.changeToTestMode(study);
+		return studyMapper.toStudyResource(study);
+	}
+
+	/**
+	 * Archives a study.
+	 * <p>
+	 * Only active, locked or already archived studies can be archived. Archived studies can be deleted afterward.
+	 *
+	 * @param studyApiId API ID of the study to archive.
+	 * @return The archived study.
+	 * @throws RandimiException If the study does not exist or is not active, locked or archived.
+	 */
+	@Operation(summary = "Archive a study.",
+	           description = "Only active, locked or already archived studies can be archived. Archived studies can be deleted afterward.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200",
+			             description = "OK. Response contains a study resource describing the structure of the archived study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = StudyResource.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "Forbidden. The user has no permissions to use the API or to update the study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "406",
+			             description = "Not Acceptable. No study with the given API ID could be found or the study is not active, locked or archived.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "Internal Server Error. Something went wrong in the server.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).UPDATE_STUDY)")
+	@PostMapping(value = "/study/{studyApiId}/archive", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Transactional
+	public StudyResource archiveStudy(
+			@PathVariable @Parameter(description = "API ID of the study", required = true) final String studyApiId
+	) throws RandimiException {
+		final Study study = studyRepository.findByApiId(studyApiId).orElse(null);
+		if (study == null || study.isDeleted()) {
+			throw exceptionService.notAcceptableMissingStudy(studyApiId);
+		}
+
+		studyService.archiveStudy(study, null);
+		return studyMapper.toStudyResource(study);
+	}
+
+	//-----------------------//
+	//    DELETE-Requests    //
+	//-----------------------//
+
+	/**
+	 * Deletes a study.
+	 * <p>
+	 * Studies that are newly created or in test mode are removed completely. Archived studies are marked as deleted,
+	 * which requires a change reason. Active and locked studies cannot be deleted.
+	 *
+	 * @param studyApiId API ID of the study to delete.
+	 * @param changeReason Reason for the deletion, required for archived studies.
+	 * @throws RandimiException If the study does not exist or cannot be deleted.
+	 */
+	@Operation(summary = "Delete a study.",
+	           description = "Studies that are newly created or in test mode are removed completely. Archived studies are marked as deleted, which requires a change reason. Active and locked studies cannot be deleted.")
+	@ApiResponses({
+			@ApiResponse(responseCode = "204",
+			             description = "No Content. The study has been deleted."),
+			@ApiResponse(responseCode = "400",
+			             description = "Bad Request. The study is archived and the change reason is missing.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "Forbidden. The user has no permissions to use the API or to delete the study.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "406",
+			             description = "Not Acceptable. No study with the given API ID could be found or the study is active or locked.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PreAuthorize("@customPermissionEvaluator.hasPermissionStudyApiId(authentication, #studyApiId, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).DELETE_STUDY)")
+	@DeleteMapping(value = "/study/{studyApiId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Transactional
+	public void deleteStudy(
+			@PathVariable @Parameter(description = "API ID of the study", required = true) final String studyApiId,
+			@RequestParam(required = false) @Nullable
+			@Parameter(description = "Reason for the deletion, required for archived studies") final String changeReason
+	) throws RandimiException {
+		final Study study = studyRepository.findByApiId(studyApiId).orElse(null);
+		if (study == null || study.isDeleted()) {
+			throw exceptionService.notAcceptableMissingStudy(studyApiId);
+		}
+		if (study.isArchived() && (changeReason == null || changeReason.isBlank())) {
+			throw exceptionService.missingParameterChangeReason();
+		}
+
+		studyService.deleteStudy(new DeleteStudyDTO(new ChangeReason(changeReason, null), study.getId()));
+	}
 
 	/**
 	 * Randomize a patient by assigning it a study arm.

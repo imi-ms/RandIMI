@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Subject pseudonym popup</title>
+</head>
+<body>
+
+<!--/*@thymesVar id="editSubjectPseudonymDTO" type="de.unimuenster.imi.randimi.dto.subject.EditSubjectPseudonymDTO"*/-->
+<th:block th:fragment="subject_pseuodnym_popup(editSubjectPseudonymDTO)">
+	<form method="POST" th:action="@{/subjects/edit-pseudonym}" th:object="${editSubjectPseudonymDTO}">
+		<div th:replace="~{fragments/popup.html :: common_popup(popupId='editPseudonymPopup', popupTitleMessageCode='subjects.view.editPseudonym.title', bodyContent=~{::#editPseudonymPopupBody}, footerContent=~{::#editPseudonymPopupFooter})}">
+			<div id="editPseudonymPopupBody">
+				<div class="mb-3">
+					<span id="editPseudonymPopupText"></span>
+				</div>
+
+				<div th:replace="~{fragments/inputs.html :: textInput(fieldName='pseudonym', label=#{subjects.view.pseudonym}, maxLength='255')}">
+				</div>
+
+				<div th:replace="~{fragments/change_reason.html :: changeReason(changeReasonKey='editSubjectPseudonymDTO.changeReason', reasonTypesKey='editPseudonymReasonTypes')}">
+				</div>
+
+				<input id="editSubjectListId" type="hidden" th:field="*{subjectListId}"/>
+				<input id="editSubjectId" type="hidden" th:field="*{subjectId}"/>
+				<input id="editStudyId" type="hidden" th:field="*{studyId}"/>
+				<input id="editStudyApiId" type="hidden" th:field="*{studyApiId}"/>
+			</div>
+			<div id="editPseudonymPopupFooter">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true"
+				        th:text="#{button.cancel}">Cancel
+				</button>
+				<button type="submit" class="btn btn-primary" value="save" id="editPseudonymSaveButton" name="action"
+				        th:text="#{button.save}">Save
+				</button>
+			</div>
+		</div>
+	</form>
+
+	<script type="text/javascript">
+        /**
+         * Updates the pseudonym popup.
+         * @param {HTMLElement} element Element containing the subject data attributes.
+         */
+        function updatePseudonymPopUpFromButton(element) {
+            const entryId = element.dataset['randomizationEntryId'];
+            const entryPseudonym = element.dataset['randomizationEntryPseudonym'];
+            updatePseudonymPopUp(entryId, entryPseudonym);
+        }
+
+        function updatePseudonymPopUp(entryId, entryPseudonym) {
+            const editDialogueText = /*[[#{subjects.view.editPseudonym.popupText}]]*/ 'Please enter the new pseudonym for the subject SUBJECT_PLACEHOLDER.';
+
+            document.getElementById('editPseudonymPopupText').innerText = editDialogueText.replace("SUBJECT_PLACEHOLDER", "'" + entryPseudonym + "'");
+            document.getElementById('editSubjectId').value = entryId;
+            document.getElementById('pseudonym').value = entryPseudonym;
+        }
+	</script>
+
+</th:block>
+
+</body>
+</html>

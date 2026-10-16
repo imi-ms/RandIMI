@@ -51,6 +51,10 @@ public class SubjectEntryMapper {
             subjectEntryDTO.setLocationApiId(model.getSite().getApiId());
         }
 
+        for (final StratumPartBase stratum : model.getSubjectList().getStratumParts()) {
+            subjectEntryDTO.getStrata().put(stratum.getStratum().getName(), stratum.getName());
+        }
+
         return subjectEntryDTO;
     }
 

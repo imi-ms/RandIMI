@@ -302,7 +302,7 @@ public class StudyControllerTest extends MVCControllerTestBase {
 		Study study = createPostTest(studyDTO);
 
 		for (PermissionType permissionType : PermissionType.values()) {
-			final AclEntry aclEntry = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study,
+			final AclEntry aclEntry = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study,
 			                                                                                         activeTestUser.getAclSid(),
 			                                                                                         permissionType);
 			assertNotNull(aclEntry, "User has no " + permissionType.name() + " permission!");
@@ -1098,24 +1098,24 @@ public class StudyControllerTest extends MVCControllerTestBase {
 		assertTrue(study.getAssignedUsers().contains(user), "User has not been assigned to the study!");
 		assertTrue(user.getAssignedStudies().contains(study), "Study has not been assigned to the user!");
 
-		final AclEntry readStudy = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study,
+		final AclEntry readStudy = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study,
 		                                                                                          user.getAclSid(),
 		                                                                                          PermissionType.READ_STUDY);
 		assertNotNull(readStudy, "User has no READ_STUDY permission!");
 
-		final AclEntry createSubject = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study.getSites().get(0),
-				user.getAclSid(),
-				PermissionType.CREATE_SUBJECT);
+		final AclEntry createSubject = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study.getSites().get(0),
+		                                                                                              user.getAclSid(),
+		                                                                                              PermissionType.CREATE_SUBJECT);
         assertNotNull(createSubject, "User has no CREATE_SUBJECT permission!");
 
-        final AclEntry readSubject = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study.getSites().get(0),
-                user.getAclSid(),
-                PermissionType.READ_SUBJECT);
+        final AclEntry readSubject = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study.getSites().get(0),
+                                                                                                    user.getAclSid(),
+                                                                                                    PermissionType.READ_SUBJECT);
         assertNotNull(readSubject, "User has no READ_SUBJECT permission!");
 
-        final AclEntry readAuditSimple = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study,
-                user.getAclSid(),
-                PermissionType.READ_AUDIT_SIMPLE);
+        final AclEntry readAuditSimple = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study,
+                                                                                                        user.getAclSid(),
+                                                                                                        PermissionType.READ_AUDIT_SIMPLE);
         assertNotNull(readAuditSimple, "User has no READ_AUDIT_SIMPLE permission!");
 	}
 
@@ -1142,24 +1142,24 @@ public class StudyControllerTest extends MVCControllerTestBase {
         assertFalse(study.getAssignedUsers().contains(user), "User has not been removed from the study!");
         assertFalse(user.getAssignedStudies().contains(study), "Study has not been removed from the user!");
 
-        final AclEntry readStudy = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study,
-                user.getAclSid(),
-                PermissionType.READ_STUDY);
+        final AclEntry readStudy = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study,
+                                                                                                  user.getAclSid(),
+                                                                                                  PermissionType.READ_STUDY);
         assertNull(readStudy, "User has READ_STUDY permission!");
 
-        final AclEntry createSubject = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study.getSites().get(0),
-                user.getAclSid(),
-                PermissionType.CREATE_SUBJECT);
+        final AclEntry createSubject = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study.getSites().get(0),
+                                                                                                      user.getAclSid(),
+                                                                                                      PermissionType.CREATE_SUBJECT);
         assertNull(createSubject, "User has CREATE_SUBJECT permission!");
 
-        final AclEntry readSubject = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study.getSites().get(0),
-                user.getAclSid(),
-                PermissionType.READ_SUBJECT);
+        final AclEntry readSubject = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study.getSites().get(0),
+                                                                                                    user.getAclSid(),
+                                                                                                    PermissionType.READ_SUBJECT);
         assertNull(readSubject, "User has READ_SUBJECT permission!");
 
-        final AclEntry readAuditSimple = aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(study,
-                user.getAclSid(),
-                PermissionType.READ_AUDIT_SIMPLE);
+        final AclEntry readAuditSimple = aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(study,
+                                                                                                        user.getAclSid(),
+                                                                                                        PermissionType.READ_AUDIT_SIMPLE);
         assertNull(readAuditSimple, "User has READ_AUDIT_SIMPLE permission!");
     }
 

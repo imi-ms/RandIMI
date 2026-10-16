@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.JsonPath;
 import de.unimuenster.imi.randimi.model.api.RandomizePatientRequestBodyV2;
 import de.unimuenster.imi.randimi.model.enumeration.AuditType;
+import de.unimuenster.imi.randimi.model.enumeration.ImbalanceFunction;
+import de.unimuenster.imi.randimi.model.enumeration.RandomizationAlgorithm;
 import de.unimuenster.imi.randimi.model.study.Study;
 import de.unimuenster.imi.randimi.model.study.StudyArm;
 import de.unimuenster.imi.randimi.model.subject.Subject;
@@ -719,5 +721,395 @@ public class APIControllerV2Test extends APIControllerTestBase {
                                 .param("pseudonym", pseudonym))
                .andExpect(status().isNotAcceptable())
                .andExpect(jsonPath("detail").value(expectedContent));
+    }
+
+    private static final String CREATE_STUDY_CONFIGURATION = """
+            {
+              "name": "API Study",
+              "apiId": "api-study",
+              "capacity": 16,
+              "stratifyBySite": true,
+              "sites": [
+                {"name": "API Site 1", "capacity": 8, "pseudonymRegex": ".*", "seed": 42},
+                {"name": "API Site 2", "apiId": "site-2", "capacity": 8, "pseudonymRegex": ".*"}
+              ],
+              "arms": [
+                {"name": "Control"},
+                {"name": "Intervention", "apiId": "int"}
+              ],
+              "strata": [
+                {"name": "Sex", "values": [{"name": "F"}, {"name": "M", "apiId": "male"}]}
+              ],
+              "randomization": {"algorithm": "BLOCKED", "minBlocksize": 2, "maxBlocksize": 4}
+            }""";
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void createStudyTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(CREATE_STUDY_CONFIGURATION))
+               .andExpect(status().isCreated())
+               .andExpect(content().json(
+                       "{'name': 'API Study', 'apiId': 'api-study', 'pseudonymHandling': 'UNIQUE_IN_STUDY', 'sites': [{'name': 'API Site 1', 'apiId': 'API Site 1'}, {'name': 'API Site 2', 'apiId': 'site-2'}], 'arms': [{'name': 'Control', 'apiId': 'Control'}, {'name': 'Intervention', 'apiId': 'int'}], 'strata': [{'name': 'Sex', 'apiId': 'Sex', 'type': 'ENUM', 'values': [{'name': 'F', 'apiId': 'F'}, {'name': 'M', 'apiId': 'male'}]}]}"));
+
+        final List<Study> studies = studyRepository.findByGuiName("API Study");
+        assertEquals(1, studies.size(), "Study was not persisted!");
+
+        final Study study = studies.get(0);
+        assertEquals(RandomizationAlgorithm.BLOCKED, study.getRandomizationAlgorithm());
+        assertEquals(2, study.getRandomizationAlgorithmVersion(), "New studies should use the latest version!");
+        assertEquals(2, study.getMinBlocksize());
+        assertEquals(4, study.getMaxBlocksize());
+        assertTrue(study.isStratifiedBySite());
+        assertEquals(42L, study.getSites().get(0).getSeed());
+        assertFalse(study.isActive(), "Study should not be activated!");
+
+        testLastAuditEntryForStudy(study.getId(), AuditType.CREATE, null);
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void createStudyMinimizationTest() throws Exception {
+        final String configuration = """
+                {
+                  "name": "API Minimization Study",
+                  "capacity": 10,
+                  "sites": [{"name": "Site", "capacity": 10, "pseudonymRegex": ".*"}],
+                  "arms": [{"name": "A"}, {"name": "B"}],
+                  "randomization": {"algorithm": "MINIMIZATION", "imbalanceBias": 0.8, "imbalanceFunction": "RANGE"}
+                }""";
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(configuration))
+               .andExpect(status().isCreated())
+               .andExpect(jsonPath("apiId").value("API Minimization Study"));
+
+        final Study study = studyRepository.findByGuiName("API Minimization Study").get(0);
+        assertEquals(RandomizationAlgorithm.MINIMIZATION, study.getRandomizationAlgorithm());
+        assertEquals(0.8f, study.getMinimizationParameter().getImbalanceBias());
+        assertEquals(ImbalanceFunction.RANGE, study.getMinimizationParameter().getImbalanceFunction());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void createStudyInvalidConfigurationTest() throws Exception {
+        final String configuration = """
+                {
+                  "capacity": 16,
+                  "sites": [],
+                  "arms": [{"name": "Control"}],
+                  "randomization": {"algorithm": "BLOCKED", "minBlocksize": 1}
+                }""";
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(configuration))
+               .andExpect(status().isBadRequest())
+               .andExpect(jsonPath("details.validationErrors.name").exists())
+               .andExpect(jsonPath("details.validationErrors.sites").exists())
+               .andExpect(jsonPath("details.validationErrors.arms").exists())
+               .andExpect(jsonPath("details.validationErrors['randomization.minBlocksize']").exists())
+               .andExpect(jsonPath("details.validationErrors['randomization.maxBlocksize']").exists());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void createStudyInvalidStudyTest() throws Exception {
+        final String configuration = CREATE_STUDY_CONFIGURATION
+                .replace("\"name\": \"API Study\"", "\"name\": \"Active Study\"")
+                .replace("\"name\": \"Intervention\"", "\"name\": \"Control\"")
+                .replace("\"name\": \"M\"", "\"name\": \"F\"");
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(configuration))
+               .andExpect(status().isBadRequest())
+               .andExpect(jsonPath("errorCode").value(3020))
+               .andExpect(jsonPath("details.validationErrors.name").exists())
+               .andExpect(jsonPath("details.validationErrors['arms[1].name']").exists())
+               .andExpect(jsonPath("details.validationErrors['strata[0].values[1].name']").exists());
+
+        assertTrue(studyRepository.findByGuiName("API Study").isEmpty());
+    }
+
+    @Test
+    public void createStudyForbiddenTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(CREATE_STUDY_CONFIGURATION))
+               .andExpect(status().isForbidden());
+
+        assertTrue(studyRepository.findByGuiName("API Study").isEmpty());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void activateStudyTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+        assertFalse(inactiveStudy.isActive());
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + inactiveStudy.getApiId() + "/activate"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("apiId").value(inactiveStudy.getApiId()));
+
+        final Study study = studyRepository.findById(inactiveStudy.getId()).get();
+        assertTrue(study.isActive(), "Study should be activated!");
+        assertNotNull(study.getActivationDate());
+        assertFalse(study.getSubjectLists().isEmpty(), "Subject lists should be generated!");
+
+        testLastAuditEntryForStudy(study.getId(), AuditType.ACTIVATE, null);
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void activateStudyTestModeTest() throws Exception {
+        final Study testModeStudy = getTestModeStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + testModeStudy.getApiId() + "/activate"))
+               .andExpect(status().isOk());
+
+        assertTrue(studyRepository.findById(testModeStudy.getId()).get().isActive(), "Study should be activated!");
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void activateStudyAlreadyActiveTest() throws Exception {
+        final Study activeStudy = getActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + activeStudy.getApiId() + "/activate"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5055));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void activateStudyInvalidStudyTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/invalid/activate"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5010));
+    }
+
+    @Test
+    public void activateStudyForbiddenTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + inactiveStudy.getApiId() + "/activate"))
+               .andExpect(status().isForbidden());
+
+        assertFalse(studyRepository.findById(inactiveStudy.getId()).get().isActive());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void testStudyTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + inactiveStudy.getApiId() + "/test"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("apiId").value(inactiveStudy.getApiId()));
+
+        final Study study = studyRepository.findById(inactiveStudy.getId()).get();
+        assertTrue(study.isInTestMode(), "Study should be in test mode!");
+        assertFalse(study.getSubjectLists().isEmpty(), "Subject lists should be generated!");
+
+        testLastAuditEntryForStudy(study.getId(), AuditType.TEST, null);
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void testStudyAlreadyActiveTest() throws Exception {
+        final Study activeStudy = getActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + activeStudy.getApiId() + "/test"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5055));
+
+        assertTrue(studyRepository.findById(activeStudy.getId()).get().isActive());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void testStudyInvalidStudyTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/invalid/test"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5010));
+    }
+
+    @Test
+    public void testStudyForbiddenTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + inactiveStudy.getApiId() + "/test"))
+               .andExpect(status().isForbidden());
+
+        assertFalse(studyRepository.findById(inactiveStudy.getId()).get().isInTestMode());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void archiveStudyTest() throws Exception {
+        final Study activeStudy = getActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + activeStudy.getApiId() + "/archive"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("apiId").value(activeStudy.getApiId()));
+
+        assertTrue(studyRepository.findById(activeStudy.getId()).get().isArchived(), "Study should be archived!");
+        testLastAuditEntryForStudy(activeStudy.getId(), AuditType.ARCHIVE, null);
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void archiveStudyLockedTest() throws Exception {
+        final Study lockedStudy = getLockedActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + lockedStudy.getApiId() + "/archive"))
+               .andExpect(status().isOk());
+
+        assertTrue(studyRepository.findById(lockedStudy.getId()).get().isArchived(), "Study should be archived!");
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void archiveStudyInactiveTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + inactiveStudy.getApiId() + "/archive"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5051));
+
+        assertFalse(studyRepository.findById(inactiveStudy.getId()).get().isArchived());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void archiveStudyInvalidStudyTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/invalid/archive"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5010));
+    }
+
+    @Test
+    public void archiveStudyForbiddenTest() throws Exception {
+        final Study activeStudy = getActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .post("/api/v2/study/" + activeStudy.getApiId() + "/archive"))
+               .andExpect(status().isForbidden());
+
+        assertFalse(studyRepository.findById(activeStudy.getId()).get().isArchived());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void deleteStudyTestModeTest() throws Exception {
+        final Study testModeStudy = getTestModeStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/" + testModeStudy.getApiId()))
+               .andExpect(status().isNoContent());
+
+        assertTrue(studyRepository.findById(testModeStudy.getId()).isEmpty(), "Study should be removed!");
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void deleteStudyArchivedTest() throws Exception {
+        final Study archivedStudy = getArchivedStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/" + archivedStudy.getApiId())
+                                .param("changeReason", "Test"))
+               .andExpect(status().isNoContent());
+
+        assertTrue(studyRepository.findById(archivedStudy.getId()).get().isDeleted(),
+                   "Study should be marked as deleted!");
+        testLastAuditEntryForStudy(archivedStudy.getId(), AuditType.DELETE, "Test");
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void deleteStudyArchivedMissingChangeReasonTest() throws Exception {
+        final Study archivedStudy = getArchivedStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/" + archivedStudy.getApiId()))
+               .andExpect(status().isBadRequest())
+               .andExpect(jsonPath("errorCode").value(1060));
+
+        assertTrue(studyRepository.findById(archivedStudy.getId()).get().isArchived());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void deleteStudyActiveTest() throws Exception {
+        final Study activeStudy = getActiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/" + activeStudy.getApiId()))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5055));
+
+        assertTrue(studyRepository.findById(activeStudy.getId()).isPresent());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin",
+                     userDetailsServiceBeanName = RandimiUserDetailsService.USER_DETAILS_SERVICE_NAME)
+    public void deleteStudyInvalidStudyTest() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/invalid"))
+               .andExpect(status().isNotAcceptable())
+               .andExpect(jsonPath("errorCode").value(5010));
+    }
+
+    @Test
+    public void deleteStudyForbiddenTest() throws Exception {
+        final Study inactiveStudy = getInactiveStudy();
+
+        mockMvc.perform(MockMvcRequestBuilders
+                                .delete("/api/v2/study/" + inactiveStudy.getApiId()))
+               .andExpect(status().isForbidden());
+
+        assertTrue(studyRepository.findById(inactiveStudy.getId()).isPresent());
     }
 }

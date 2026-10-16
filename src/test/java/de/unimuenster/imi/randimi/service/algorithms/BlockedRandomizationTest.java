@@ -35,6 +35,7 @@ public class BlockedRandomizationTest extends RandimiIntegrationTest {
 	private StudyUtilityService studyUtilityService;
 
 	private BlockedRandomization blockedRandomization;
+	private BlockedRandomizationV1 blockedRandomizationV1;
 
 	private Study study;
 	private SubjectList subjectList;
@@ -70,6 +71,8 @@ public class BlockedRandomizationTest extends RandimiIntegrationTest {
 
 		blockedRandomization = new BlockedRandomization(messageService, stratumCodeService, subjectRepository, randomService,
 		                                                studyUtilityService);
+		blockedRandomizationV1 = new BlockedRandomizationV1(messageService, stratumCodeService, subjectRepository,
+		                                                    randomService, studyUtilityService);
 	}
 
 	@Test
@@ -100,9 +103,9 @@ public class BlockedRandomizationTest extends RandimiIntegrationTest {
 		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the first allocation!");
 
 		studyArm = blockedRandomization.getRandomStudyArm(site, subjectList);
-		expectedRemainingAssignments = new Integer[]{2, 2};
+		expectedRemainingAssignments = new Integer[]{1, 3};
 		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the second allocation!");
-		assertEquals(2L, studyArm.getId(), "Unexpected study arm for the second allocation!");
+		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the second allocation!");
 	}
 
 	@Test
@@ -115,6 +118,34 @@ public class BlockedRandomizationTest extends RandimiIntegrationTest {
 		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the first allocation!");
 
 		studyArm = blockedRandomization.getRandomStudyArm(site, subjectList);
+		expectedRemainingAssignments = new Integer[]{7, 3};
+		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the second allocation!");
+		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the second allocation!");
+	}
+
+	@Test
+	public void getRandomStudyArmNoStratificationV1Test() {
+		StudyArm studyArm = blockedRandomizationV1.getRandomStudyArm(site, subjectList);
+		Integer[] expectedRemainingAssignments = new Integer[]{2, 3};
+		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the first allocation!");
+		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the first allocation!");
+
+		studyArm = blockedRandomizationV1.getRandomStudyArm(site, subjectList);
+		expectedRemainingAssignments = new Integer[]{2, 2};
+		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the second allocation!");
+		assertEquals(2L, studyArm.getId(), "Unexpected study arm for the second allocation!");
+	}
+
+	@Test
+	public void getRandomStudyArmNoStratificationRatioV1Test() {
+		subjectList.getStudy().getStudyArms().get(0).setRatio(3);
+
+		StudyArm studyArm = blockedRandomizationV1.getRandomStudyArm(site, subjectList);
+		Integer[] expectedRemainingAssignments = new Integer[]{8, 3};
+		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the first allocation!");
+		assertEquals(1L, studyArm.getId(), "Unexpected study arm for the first allocation!");
+
+		studyArm = blockedRandomizationV1.getRandomStudyArm(site, subjectList);
 		expectedRemainingAssignments = new Integer[]{8, 2};
 		assertArrayEquals(expectedRemainingAssignments, subjectList.getRemainingAssignments(), "Unexpected remaining assignments after the second allocation!");
 		assertEquals(2L, studyArm.getId(), "Unexpected study arm for the second allocation!");

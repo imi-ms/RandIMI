@@ -12,9 +12,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -43,6 +41,12 @@ public class Study extends NamedEntity {
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private RandomizationAlgorithm randomizationAlgorithm;
+
+	/**
+	 * Version of the randomization algorithm
+	 */
+	@Column(nullable = false)
+	private int randomizationAlgorithmVersion;
 
 	@Column(nullable = false)
 	private Boolean preGenerateSubjectList = false;
@@ -109,13 +113,11 @@ public class Study extends NamedEntity {
 	 * possibly many sites which participate in the study. A study can also be
 	 * stratified by sites.
 	 */
-	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY, cascade = {CascadeType.ALL})
 	@OrderBy("orderNumber")
 	private final List<StudyArm> studyArms = new ArrayList<>();
 
-	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY, cascade = {CascadeType.ALL})
 	@OrderBy("orderNumber")
 	private final List<Site> sites = new ArrayList<>();
 
@@ -123,31 +125,28 @@ public class Study extends NamedEntity {
 	 * List of randomization lists. One list for each stratum combination of the
 	 * study.
 	 */
-	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY, cascade = {CascadeType.ALL})
 	@ToString.Exclude
 	private final List<SubjectList> subjectLists = new ArrayList<>();
 
 	/**
 	 * List of strata associated with this study.
 	 */
-	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade(CascadeType.ALL)
+	@OneToMany(mappedBy = "study", orphanRemoval = true, fetch = FetchType.LAZY, cascade = {CascadeType.ALL})
 	@OrderBy("orderNumber")
 	private final List<Stratum> stratums = new ArrayList<>();
 
 	@Column
 	private boolean stratifiedBySite;
 
-	@ManyToMany(fetch = FetchType.LAZY)
+	@ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
 	@JoinTable(
 			name = "randimi_user_study",
 			joinColumns = @JoinColumn(name = "study_id"),
 			inverseJoinColumns = @JoinColumn(name = "randimi_user_id"))
-	@Cascade(CascadeType.ALL)
 	private final Set<RandimiUser> assignedUsers = new HashSet<>();
 
-	public void setMinimizationParameter(final MinimizationParameter minimizationParameter) {
+	public void setMinimizationParameter(@Nullable final MinimizationParameter minimizationParameter) {
 		if (this.minimizationParameter != null) {
 			this.minimizationParameter.setStudy(null);
 		}
@@ -355,7 +354,7 @@ public class Study extends NamedEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 		if (this == obj) {
 			return true;
 		}

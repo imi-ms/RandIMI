@@ -12,6 +12,7 @@ import de.unimuenster.imi.randimi.model.user.RandimiUser;
 import de.unimuenster.imi.randimi.repository.study.SiteRepository;
 import de.unimuenster.imi.randimi.repository.study.StudyRepository;
 import de.unimuenster.imi.randimi.repository.subject.SubjectListRepository;
+import de.unimuenster.imi.randimi.repository.subject.SubjectRepository;
 import de.unimuenster.imi.randimi.repository.user.AclClassRepository;
 import de.unimuenster.imi.randimi.repository.user.AclEntryRepository;
 import de.unimuenster.imi.randimi.repository.user.AclObjectIdentityRepository;
@@ -23,8 +24,8 @@ import java.util.Optional;
 import de.unimuenster.imi.randimi.repository.user.RandimiUserRepository;
 import de.unimuenster.imi.randimi.service.StratumCodeService;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,7 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
 	private final AclObjectIdentityRepository aclObjectIdentityRepository;
 	private final RandimiUserRepository randimiUserRepository;
 	private final SiteRepository siteRepository;
+	private final SubjectRepository subjectRepository;
 	private final SubjectListRepository subjectListRepository;
 	private final StratumCodeService stratumCodeService;
 	private final StudyRepository studyRepository;
@@ -52,32 +54,35 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
 	public CustomPermissionEvaluator(AclObjectIdentityRepository aclObjectIdentityRepository,
 	                                 AclEntryRepository aclEntryRepository, AclClassRepository aclClassRepository,
 	                                 RandimiUserRepository randimiUserRepository, SiteRepository siteRepository,
-	                                 SubjectListRepository subjectListRepository, StratumCodeService stratumCodeService,
-	                                 StudyRepository studyRepository) {
+	                                 SubjectRepository subjectRepository, SubjectListRepository subjectListRepository,
+	                                 StratumCodeService stratumCodeService, StudyRepository studyRepository) {
 		this.aclObjectIdentityRepository = aclObjectIdentityRepository;
 		this.aclEntryRepository = aclEntryRepository;
 		this.aclClassRepository = aclClassRepository;
 		this.randimiUserRepository = randimiUserRepository;
 		this.siteRepository = siteRepository;
+		this.subjectRepository = subjectRepository;
 		this.subjectListRepository = subjectListRepository;
 		this.stratumCodeService = stratumCodeService;
 		this.studyRepository = studyRepository;
 	}
 
 	@Override
-	public boolean hasPermission(Authentication authentication, Object targetDomainObject, Object permission) {
+	public boolean hasPermission(@Nullable Authentication authentication,
+	                             @Nullable Object targetDomainObject,
+	                             Object permission) {
 		if ((authentication == null) || (targetDomainObject == null) || !(permission instanceof String)) {
 			return false;
 		}
 		RandimiUser user = ((MyUserDetails) authentication.getPrincipal()).getUser();
-		return aclEntryRepository.findFirtsByObjectAndAclSidAndPermissionType(targetDomainObject, user.getAclSid(),
+		return aclEntryRepository.findFirstByObjectAndAclSidAndPermissionType(targetDomainObject, user.getAclSid(),
 		                                                                      PermissionType.valueOf(
 				                                                                      (String) permission)) != null;
 	}
 
 	@Override
-	public boolean hasPermission(Authentication authentication, Serializable targetId, String targetType,
-	                             Object permission) {
+	public boolean hasPermission(@Nullable Authentication authentication, @Nullable Serializable targetId,
+	                             @Nullable String targetType, Object permission) {
 		if ((authentication == null) || (targetId == null) || (targetType == null) || !(permission instanceof String)) {
 			return false;
 		}
@@ -324,8 +329,19 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
 		return hasPermissionSite(authentication, locationStratum.getSite(), permission);
 	}
 
+	public boolean hasPermissionSubjectId(@Nullable final Authentication authentication, @Nullable final Long subjectId,
+	                                      @Nullable final String permission) {
+		if (subjectId == null) {
+			return false;
+		}
+
+		final var subjectOptional = subjectRepository.findById(subjectId);
+		return subjectOptional.filter(subject -> hasPermissionSite(authentication, subject.getSite(), permission))
+		                      .isPresent();
+	}
+
 	@Nullable
-	private Boolean hasAdminRights(final Authentication authentication, final String permission) {
+	private Boolean hasAdminRights(@Nullable final Authentication authentication, @Nullable final String permission) {
 		if ((authentication == null) || (permission == null)) {
 			return false;
 		}
