@@ -38,6 +38,18 @@
             randimi.highlightRegexTest($('#' + id + 'TestInput'));
         });
     }
+    /**
+     * Hides all sidebar sections that have no content (only the header is present).
+     * This is done to avoid empty sections in the sidebar when the user has no permissions to view certain menus/actions.
+     */
+    randimi.hideEmptySidebarSections = function() {
+        const sidebarSections = document.getElementsByClassName('randimi-sidebar-section');
+        for (const section of sidebarSections) {
+            if (section.children.length === 1) {
+                section.classList.add('empty');
+            }
+        }
+    }
 
     /**
      * Adds highlighting to the given test input for pseudonym regex.
@@ -130,6 +142,16 @@
                 const input = element.querySelector('input');
                 input.click();
             });
+        });
+    }
+
+    /**
+     * Initializes all tooltips on the page.
+     */
+    randimi.initTooltips = function () {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
 
@@ -412,6 +434,12 @@ $(document).ready(function () {
     if ($.fn.dataTable) {
         $.fn.dataTable.ext.classes.sLengthSelect = 'randimi-ignore-changes';
     }
+
+    // Initialize bootstrap tooltips
+    randimi.initTooltips();
+
+    // Hide all empty sidebar sections
+    randimi.hideEmptySidebarSections();
 });
 
 /**

@@ -134,9 +134,22 @@ release-job:
     - echo "Creating a release for tag $CI_COMMIT_TAG"
     - PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}"
     - echo PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}"
+    # Extract the section of the tagged version from the CHANGELOG as release description
+    - |
+      VERSION="${CI_COMMIT_TAG#v}"
+      awk -v ver="$VERSION" '
+        index($0, "## " ver " ") == 1 || $0 == "## " ver { found = 1; next }
+        found && /^## / { exit }
+        found { print }
+      ' CHANGELOG.md | sed -e '/./,$!d' > release_notes.md
+      if [ ! -s release_notes.md ]; then
+        echo "No CHANGELOG entry found for version $VERSION"
+        echo "Automatic created release $CI_COMMIT_TITLE" > release_notes.md
+      fi
+      cat release_notes.md
   release:
     name: "${TARGET_NAME} $CI_COMMIT_TAG"
-    description: "Automatic created release $CI_COMMIT_TITLE"
+    description: "./release_notes.md"
     tag_name: '$CI_COMMIT_TAG'
     assets:
       # Links the files uploaded in the previous job

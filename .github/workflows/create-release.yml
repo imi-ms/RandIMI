@@ -66,11 +66,31 @@ jobs:
     env:
       VERSION: ${{ needs.build.outputs.version }}
     steps:
+      - name: Checkout CHANGELOG
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
+
       - name: Download dist artifact
         uses: actions/download-artifact@v8
         with:
           name: RandIMI-${{ env.VERSION }}.war
           path: target
+
+      # Extract the section of the current version from the CHANGELOG as release description
+      - name: Extract release notes
+        run: |
+          awk -v ver="$VERSION" '
+            index($0, "## " ver " ") == 1 || $0 == "## " ver { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "::warning::No CHANGELOG entry found for version $VERSION"
+            echo "Release v$VERSION" > release_notes.md
+          fi
+          cat release_notes.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -78,7 +98,7 @@ jobs:
           tag_name: v${{ env.VERSION }}
           name: RandIMI v${{ env.VERSION }}
           files: target/RandIMI-${{ env.VERSION }}.war
-          generate_release_notes: true
+          body_path: release_notes.md
 
   deploy-swagger-ui:
     runs-on: ubuntu-latest

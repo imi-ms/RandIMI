@@ -104,7 +104,8 @@ public class StudyDTOValidator extends AbstractValidator {
 		if (activeOrTest) {
 			if (studyDTO.getPseudonymHandling() == PseudonymHandling.UNIQUE_IN_STUDY) {
 				// Check if all pseudonyms are unique
-				final var numberDuplicatePseudonyms = subjectRepository.countDuplicatePseudonyms(studyDTO.getId());
+				final var numberDuplicatePseudonyms = subjectRepository.countDuplicatePseudonyms(
+						studyDTO.getId(), SubjectStatus.BLOCKING_STATUS);
 				if (numberDuplicatePseudonyms > 0) {
 					errors.rejectValue("pseudonymHandling", "errormessage",
 					                   getMsg("validator.study.pseudonymHandling.duplicatePseudonyms",

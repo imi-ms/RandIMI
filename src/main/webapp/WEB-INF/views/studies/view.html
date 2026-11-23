@@ -48,6 +48,7 @@
         </button>
 
         <button id="auditTrailButton" type="button" class="btn btn-primary randimi-sidebar-button"
+                sec:authorize="@customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_AUDIT_SIMPLE) or @customPermissionEvaluator.hasPermissionStudyDto(#authentication, #vars.study, T(de.unimuenster.imi.randimi.model.enumeration.PermissionType).READ_AUDIT_COMPLEX)"
                 onclick="openAuditTrail()">
             <span class="fas fa-user-clock randimi-sidebar-button-icon"></span>
             <span class="randimi-sidebar-button-label selenium-language-text" th:text="#{study.show.auditTrail}"></span>
@@ -329,9 +330,12 @@
         }
 
         auditTrailDataTable = await randimi.setUpDatatable('auditTrailTable', opts);
-        setTimeout(() => {
-            updateAuditTable(auditTrailDataTable);
-        }, 100);
+        // If the user has no permissions to view the audit trail, the table is not rendered and the datatable is null.
+        if (auditTrailDataTable != null) {
+            setTimeout(() => {
+                updateAuditTable(auditTrailDataTable);
+            }, 100);
+        }
         openProperties();
     });
 

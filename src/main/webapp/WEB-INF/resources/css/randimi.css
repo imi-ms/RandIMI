@@ -673,6 +673,10 @@ td, th {
 	margin-bottom: 1rem;
 }
 
+.randimi-sidebar-section.empty {
+	display: none !important;
+}
+
 .randimi-sidebar-section > :not(:last-child) {
 	margin-bottom: 1rem;
 }

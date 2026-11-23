@@ -68,7 +68,7 @@ public interface SubjectCrudRepository extends CrudRepository<Subject, Long> {
 	@Query("select s from Subject s where s.subjectList.study.id = ?1 and s.status != ?2 order by greatest(s.randomizationTimestamp, s.releaseTimestamp) desc limit 1")
 	Optional<Subject> findFirstBySubjectListStudyIdAndStatusNotOrderByGreatestDesc(Long studyId, SubjectStatus status);
 
-	@Query("select count(*) from (select count(*) as count from Subject s where s.subjectList.study.id = ?1 group by s.pseudonym having count(*) > 1)")
-	long countDuplicatePseudonyms(Long studyId);
+	@Query("select count(*) from (select count(*) as count from Subject s where s.subjectList.study.id = ?1 and s.status in ?2 group by s.pseudonym having count(*) > 1)")
+	long countDuplicatePseudonyms(Long studyId, Collection<SubjectStatus> subjectStatusList);
 
 }

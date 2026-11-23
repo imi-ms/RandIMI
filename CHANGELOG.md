@@ -2,6 +2,25 @@
 
 This file records the changes to RandIMI since version 2.0.0 (2023-08-23).
 
+## 2.3.2 (2026-11-23)
+
+### Improvements:
+
+- When switching the pseudonym uniqueness from site to study, only subjects that are active or deleted are checked for
+  uniqueness. Subjects that are released or pregenerated are ignored.
+  ([#18236](https://bugtracker.uni-muenster.de/issues/18236))
+
+### Fixes:
+
+- Fixed audit trail menu being visible for users without permission to view the audit trail.
+  ([#18235](https://bugtracker.uni-muenster.de/issues/18235))
+- Hide empty sections in the sidebar.
+
+## Development / Building:
+
+- Automatically generate release notes from the changelog when creating a new release using the GitHub or GitLab CI/CD
+  pipelines. ([#18241](https://bugtracker.uni-muenster.de/issues/18241))
+
 ## 2.3.1 (2026-10-16)
 
 ### New features
